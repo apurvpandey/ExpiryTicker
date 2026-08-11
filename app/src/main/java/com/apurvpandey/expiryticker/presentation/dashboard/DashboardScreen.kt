@@ -1,7 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,15 +15,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,16 +41,22 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
 import com.apurvpandey.expiryticker.presentation.components.SummaryCard
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun DashboardRoute(
@@ -79,6 +92,10 @@ fun DashboardScreen(
     onSearchQueryChanged: (String) -> Unit,
     onToggleSearch: () -> Unit
 ) {
+    val todayLabel = remember {
+        LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -98,11 +115,18 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        Text(
-                            text = "ExpiryTicker",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Column {
+                            Text(
+                                text = "ExpiryTicker",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = todayLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -122,19 +146,20 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAdd) {
-                Icon(Icons.Default.Add, contentDescription = "Add item")
-            }
+            ExtendedFloatingActionButton(
+                onClick = onNavigateToAdd,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add item") }
+            )
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Summary row
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -143,6 +168,7 @@ fun DashboardScreen(
                     SummaryCard(
                         label = "Overdue",
                         count = uiState.overdueCount,
+                        icon = Icons.Outlined.Warning,
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.weight(1f)
@@ -150,6 +176,7 @@ fun DashboardScreen(
                     SummaryCard(
                         label = "Next 7 days",
                         count = uiState.next7DaysCount,
+                        icon = Icons.Outlined.Schedule,
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.weight(1f)
@@ -157,6 +184,7 @@ fun DashboardScreen(
                     SummaryCard(
                         label = "Next 30 days",
                         count = uiState.next30DaysCount,
+                        icon = Icons.Outlined.CalendarMonth,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.weight(1f)
@@ -164,7 +192,6 @@ fun DashboardScreen(
                 }
             }
 
-            // Filter chips
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(DashboardFilter.values()) { filter ->
@@ -177,9 +204,7 @@ fun DashboardScreen(
                 }
             }
 
-            if (uiState.isLoading) {
-                // no-op: initial empty state is fine until data loads
-            } else if (uiState.displayItems.isEmpty()) {
+            if (!uiState.isLoading && uiState.displayItems.isEmpty()) {
                 item {
                     EmptyState(
                         filter = uiState.currentFilter,
@@ -191,52 +216,98 @@ fun DashboardScreen(
                     ExpiryItemCard(
                         item = ws.item,
                         status = ws.status,
-                        onClick = { onNavigateToDetail(ws.item.id) }
+                        onClick = { onNavigateToDetail(ws.item.id) },
+                        modifier = Modifier.animateItem()
                     )
                 }
             }
 
-            item { Spacer(Modifier.height(80.dp)) } // FAB clearance
+            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 }
 
 @Composable
 private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
+    val (icon, title, subtitle) = when (filter) {
+        DashboardFilter.ALL -> Triple(
+            Icons.Outlined.Inbox,
+            "Nothing to track yet",
+            "Add your first expiry or renewal and ExpiryTicker will remind you before it's due."
+        )
+        DashboardFilter.OVERDUE -> Triple(
+            Icons.Outlined.CheckCircle,
+            "You're all caught up",
+            "No overdue items right now."
+        )
+        DashboardFilter.UPCOMING -> Triple(
+            Icons.Outlined.DateRange,
+            "Nothing coming up",
+            "No renewals or expiries in the near future."
+        )
+        DashboardFilter.COMPLETED -> Triple(
+            Icons.Outlined.CheckCircle,
+            "No completed items",
+            "Items you mark as renewed or completed will appear here."
+        )
+    }
+
+    EmptyStateContent(
+        icon = icon,
+        title = title,
+        subtitle = subtitle,
+        showAddButton = filter == DashboardFilter.ALL,
+        onAddItem = onAddItem
+    )
+}
+
+@Composable
+private fun EmptyStateContent(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    showAddButton: Boolean,
+    onAddItem: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 48.dp),
+            .padding(vertical = 56.dp, horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Category,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = when (filter) {
-                DashboardFilter.ALL -> "Nothing to track yet"
-                DashboardFilter.OVERDUE -> "No overdue items"
-                DashboardFilter.UPCOMING -> "Nothing coming up"
-                DashboardFilter.COMPLETED -> "No completed items"
-            },
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
-        if (filter == DashboardFilter.ALL) {
-            Text(
-                text = "Add your first expiry or renewal and ExpiryTicker will remind you before it is due.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                modifier = Modifier.padding(horizontal = 32.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+        if (showAddButton) {
             Spacer(Modifier.height(4.dp))
             androidx.compose.material3.Button(onClick = onAddItem) {
-                Text("Add item")
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text("Add your first item")
             }
         }
     }

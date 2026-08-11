@@ -30,6 +30,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -50,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -182,6 +184,8 @@ fun AddEditScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            SectionHeader("Basic info")
+
             // Title
             OutlinedTextField(
                 value = uiState.title,
@@ -226,6 +230,8 @@ fun AddEditScreen(
                     }
                 }
             }
+
+            SectionHeader("Schedule")
 
             // Due date
             OutlinedTextField(
@@ -311,6 +317,8 @@ fun AddEditScreen(
                 }
             }
 
+            SectionHeader("Optional")
+
             // Expected renewal cost
             OutlinedTextField(
                 value = uiState.amountText,
@@ -380,4 +388,16 @@ fun AddEditScreen(
             DatePicker(state = datePickerState)
         }
     }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+        letterSpacing = 0.8.sp,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+    )
 }

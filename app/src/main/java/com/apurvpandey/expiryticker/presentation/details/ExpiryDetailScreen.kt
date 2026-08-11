@@ -1,7 +1,10 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,12 +24,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,6 +40,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -107,7 +113,8 @@ fun ExpiryDetailScreen(
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                     IconButton(onClick = onDeleteClicked) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        Icon(Icons.Default.Delete, contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error)
                     }
                 }
             )
@@ -115,21 +122,19 @@ fun ExpiryDetailScreen(
     ) { innerPadding ->
         when {
             uiState.isLoading -> {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    contentAlignment = Alignment.Center
                 ) { CircularProgressIndicator() }
             }
             uiState.item == null -> {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    contentAlignment = Alignment.Center
                 ) { Text("Item not found.") }
             }
             else -> {
@@ -147,7 +152,9 @@ fun ExpiryDetailScreen(
         AlertDialog(
             onDismissRequest = onDeleteDismissed,
             title = { Text("Delete item?") },
-            text = { Text("This will permanently remove \"${uiState.item?.title}\" and cancel its reminder. This cannot be undone.") },
+            text = {
+                Text("\"${uiState.item?.title}\" will be permanently removed and its reminder cancelled.")
+            },
             confirmButton = {
                 Button(
                     onClick = onDeleteConfirmed,
@@ -170,103 +177,157 @@ private fun DetailContent(
     onMarkRenewed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val heroBg: Color
+    val heroContent: Color
+
+    if (status != null) {
+        heroBg = when (status) {
+            is ExpiryStatus.Overdue -> MaterialTheme.colorScheme.errorContainer
+            is ExpiryStatus.DueToday -> MaterialTheme.colorScheme.tertiaryContainer
+            is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
+                MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.primaryContainer
+            is ExpiryStatus.Completed -> MaterialTheme.colorScheme.surfaceVariant
+        }
+        heroContent = when (status) {
+            is ExpiryStatus.Overdue -> MaterialTheme.colorScheme.onErrorContainer
+            is ExpiryStatus.DueToday -> MaterialTheme.colorScheme.onTertiaryContainer
+            is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
+                MaterialTheme.colorScheme.onSecondaryContainer
+            else MaterialTheme.colorScheme.onPrimaryContainer
+            is ExpiryStatus.Completed -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    } else {
+        heroBg = MaterialTheme.colorScheme.surfaceVariant
+        heroContent = MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        // Header with icon and status
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.fillMaxWidth()
+        // Colored hero section
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(heroBg)
+                .padding(20.dp)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    imageVector = item.category.icon(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Column {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(heroContent.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = item.category.icon(),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                        tint = heroContent
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = item.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = heroContent
                     )
                     Text(
                         text = item.category.displayName,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = heroContent.copy(alpha = 0.7f)
                     )
+                    if (status != null) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = heroContent.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = status.toDisplayText(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = heroContent,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-
-        if (status != null) {
-            val statusColor = when (status) {
-                is ExpiryStatus.Overdue -> MaterialTheme.colorScheme.error
-                is ExpiryStatus.DueToday -> MaterialTheme.colorScheme.tertiary
-                is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
-                    MaterialTheme.colorScheme.secondary
-                else MaterialTheme.colorScheme.onSurface
-                is ExpiryStatus.Completed -> MaterialTheme.colorScheme.outline
+        // Detail and action area
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    DetailRow(
+                        label = "Due date",
+                        value = item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    DetailRow(label = "Reminder", value = "${item.reminderDaysBefore} days before")
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    DetailRow(label = "Recurrence", value = item.recurrence.displayName)
+                    if (item.amountPaise != null) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        DetailRow(
+                            label = "Expected cost",
+                            value = CurrencyFormatter.format(item.amountPaise)
+                        )
+                    }
+                }
             }
-            Text(
-                text = status.toDisplayText(),
-                style = MaterialTheme.typography.titleMedium,
-                color = statusColor,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(12.dp))
-        }
 
-        HorizontalDivider()
-        Spacer(Modifier.height(12.dp))
+            if (item.notes.isNotBlank()) {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Notes",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = item.notes,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
 
-        DetailRow("Due date", item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)))
-        DetailRow("Reminder", "${item.reminderDaysBefore} days before")
-        DetailRow("Recurrence", item.recurrence.displayName)
-        if (item.amountPaise != null) {
-            DetailRow("Expected cost", CurrencyFormatter.format(item.amountPaise))
-        }
-        if (item.notes.isNotBlank()) {
+            if (!item.isCompleted) {
+                val renewLabel = if (item.recurrence != RecurrenceType.NONE)
+                    "Mark as renewed"
+                else
+                    "Mark as completed"
+                Button(
+                    onClick = onMarkRenewed,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 14.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(renewLabel, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Notes",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = item.notes,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        if (!item.isCompleted) {
-            val renewLabel = if (item.recurrence != RecurrenceType.NONE)
-                "Mark as renewed"
-            else
-                "Mark as completed"
-            Button(
-                onClick = onMarkRenewed,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Refresh, contentDescription = null)
-                Spacer(Modifier.size(8.dp))
-                Text(renewLabel)
-            }
         }
     }
 }
@@ -274,22 +335,21 @@ private fun DetailContent(
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.4f)
+            modifier = Modifier.weight(0.45f)
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(0.6f)
+            modifier = Modifier.weight(0.55f)
         )
     }
 }

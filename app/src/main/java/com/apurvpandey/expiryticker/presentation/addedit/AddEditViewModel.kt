@@ -100,8 +100,18 @@ class AddEditViewModel(
 
     fun onRecurrenceChange(value: RecurrenceType) = _uiState.update { it.copy(recurrence = value) }
 
-    fun onAmountChange(value: String) =
-        _uiState.update { it.copy(amountText = value, amountError = null) }
+    fun onAmountChange(raw: String) {
+        val filtered = buildString {
+            var hasDot = false
+            for (ch in raw) {
+                when {
+                    ch.isDigit() -> append(ch)
+                    ch == '.' && !hasDot -> { append(ch); hasDot = true }
+                }
+            }
+        }
+        _uiState.update { it.copy(amountText = filtered, amountError = null) }
+    }
 
     fun onNotesChange(value: String) = _uiState.update { it.copy(notes = value) }
 
