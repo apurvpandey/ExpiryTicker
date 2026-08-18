@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,15 +22,15 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -40,8 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,8 +48,8 @@ import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
-import com.apurvpandey.expiryticker.domain.model.toDisplayText
-import com.apurvpandey.expiryticker.presentation.components.icon
+import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
+import com.apurvpandey.expiryticker.presentation.components.StatusChip
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -102,7 +99,7 @@ fun ExpiryDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.item?.title ?: "Details") },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -111,10 +108,6 @@ fun ExpiryDetailScreen(
                 actions = {
                     IconButton(onClick = onNavigateToEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
-                    IconButton(onClick = onDeleteClicked) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.error)
                     }
                 }
             )
@@ -142,6 +135,7 @@ fun ExpiryDetailScreen(
                     item = uiState.item,
                     status = uiState.status,
                     onMarkRenewed = onMarkRenewed,
+                    onDeleteClicked = onDeleteClicked,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -156,10 +150,10 @@ fun ExpiryDetailScreen(
                 Text("\"${uiState.item?.title}\" will be permanently removed and its reminder cancelled.")
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = onDeleteConfirmed,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) { Text("Delete") }
             },
@@ -175,110 +169,73 @@ private fun DetailContent(
     item: ExpiryItem,
     status: ExpiryStatus?,
     onMarkRenewed: () -> Unit,
+    onDeleteClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val heroBg: Color
-    val heroContent: Color
-
-    if (status != null) {
-        heroBg = when (status) {
-            is ExpiryStatus.Overdue -> MaterialTheme.colorScheme.errorContainer
-            is ExpiryStatus.DueToday -> MaterialTheme.colorScheme.tertiaryContainer
-            is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
-                MaterialTheme.colorScheme.secondaryContainer
-            else MaterialTheme.colorScheme.primaryContainer
-            is ExpiryStatus.Completed -> MaterialTheme.colorScheme.surfaceVariant
-        }
-        heroContent = when (status) {
-            is ExpiryStatus.Overdue -> MaterialTheme.colorScheme.onErrorContainer
-            is ExpiryStatus.DueToday -> MaterialTheme.colorScheme.onTertiaryContainer
-            is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
-                MaterialTheme.colorScheme.onSecondaryContainer
-            else MaterialTheme.colorScheme.onPrimaryContainer
-            is ExpiryStatus.Completed -> MaterialTheme.colorScheme.onSurfaceVariant
-        }
-    } else {
-        heroBg = MaterialTheme.colorScheme.surfaceVariant
-        heroContent = MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Colored hero section
+        // Hero section — neutral surface, status communicated only through the chip
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(heroBg)
-                .padding(20.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(heroContent.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = item.category.icon(),
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                        tint = heroContent
-                    )
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CategoryIconBadge(
+                    category = item.category,
+                    size = 56.dp,
+                    iconSize = 28.dp
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = heroContent
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = item.category.displayName,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = heroContent.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (status != null) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = heroContent.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                text = status.toDisplayText(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = heroContent,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
+                        StatusChip(status = status)
                     }
                 }
             }
         }
 
-        // Detail and action area
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     DetailRow(
                         label = "Due date",
                         value = item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    DetailRow(label = "Reminder", value = "${item.reminderDaysBefore} days before")
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    DetailRow(
+                        label = "Reminder",
+                        value = "${item.reminderDaysBefore} days before expiry"
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     DetailRow(label = "Recurrence", value = item.recurrence.displayName)
                     if (item.amountPaise != null) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                         DetailRow(
                             label = "Expected cost",
                             value = CurrencyFormatter.format(item.amountPaise)
@@ -288,7 +245,12 @@ private fun DetailContent(
             }
 
             if (item.notes.isNotBlank()) {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    )
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -325,6 +287,22 @@ private fun DetailContent(
                     Spacer(Modifier.size(8.dp))
                     Text(renewLabel, style = MaterialTheme.typography.labelLarge)
                 }
+            }
+
+            TextButton(
+                onClick = onDeleteClicked,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.size(6.dp))
+                Text("Delete item", style = MaterialTheme.typography.labelLarge)
             }
 
             Spacer(Modifier.height(8.dp))
