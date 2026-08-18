@@ -33,13 +33,12 @@ object ExpiryNotificationManager {
         context: Context,
         itemId: Long,
         itemTitle: String,
-        categoryLabel: String,
         daysUntilDue: Int
     ) {
         val body = when (daysUntilDue) {
-            0 -> "Your $categoryLabel expires today."
-            1 -> "Your $categoryLabel expires tomorrow."
-            else -> "Your $categoryLabel expires in $daysUntilDue days."
+            0 -> "Expires today — tap to view or mark as renewed."
+            1 -> "Expires tomorrow."
+            else -> "Expires in $daysUntilDue days."
         }
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
@@ -54,8 +53,8 @@ object ExpiryNotificationManager {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("$itemTitle expires soon")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(itemTitle)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(pendingIntent)
@@ -63,11 +62,11 @@ object ExpiryNotificationManager {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        // Notification ID uses itemId so each item has its own persistent notification slot
+        // Each item has its own notification slot so updates replace, not stack.
         try {
             NotificationManagerCompat.from(context).notify(itemId.toInt(), notification)
         } catch (e: SecurityException) {
-            // POST_NOTIFICATIONS permission not granted; notification silently skipped
+            // POST_NOTIFICATIONS not granted; silently skip.
         }
     }
 }

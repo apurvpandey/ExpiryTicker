@@ -32,7 +32,6 @@ class ReminderScheduler(private val context: Context) {
         val inputData = workDataOf(
             ExpiryReminderWorker.KEY_ITEM_ID to item.id,
             ExpiryReminderWorker.KEY_TITLE to item.title,
-            ExpiryReminderWorker.KEY_CATEGORY_LABEL to item.category.displayName,
             ExpiryReminderWorker.KEY_DUE_DATE to item.dueDate.toString()
         )
 
