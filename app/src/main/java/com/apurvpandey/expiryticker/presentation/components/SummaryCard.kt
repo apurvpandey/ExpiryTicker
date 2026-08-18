@@ -26,8 +26,8 @@ fun SummaryCard(
     label: String,
     count: Int,
     icon: ImageVector,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    containerColor: Color,
+    contentColor: Color,
     modifier: Modifier = Modifier
 ) {
     val animatedCount by animateIntAsState(
@@ -38,30 +38,31 @@ fun SummaryCard(
 
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = contentColor.copy(alpha = 0.75f),
-                modifier = Modifier.size(16.dp)
+                tint = contentColor.copy(alpha = 0.8f),
+                modifier = Modifier.size(24.dp)
             )
             Text(
                 text = animatedCount.toString(),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 color = contentColor,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = 0.7f)
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.75f)
             )
         }
     }

@@ -50,6 +50,7 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
 import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import com.apurvpandey.expiryticker.presentation.components.StatusChip
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -96,6 +97,8 @@ fun ExpiryDetailScreen(
     onDeleteConfirmed: () -> Unit,
     onDeleteDismissed: () -> Unit
 ) {
+    val item = uiState.item
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,6 +114,30 @@ fun ExpiryDetailScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (item != null && !item.isCompleted) {
+                val renewLabel = if (item.recurrence != RecurrenceType.NONE)
+                    "Mark as renewed" else "Mark as completed"
+                Column {
+                    HorizontalDivider()
+                    Button(
+                        onClick = onMarkRenewed,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentPadding = PaddingValues(vertical = 14.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.size(8.dp))
+                        Text(renewLabel, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         when {
@@ -122,7 +149,7 @@ fun ExpiryDetailScreen(
                     contentAlignment = Alignment.Center
                 ) { CircularProgressIndicator() }
             }
-            uiState.item == null -> {
+            item == null -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -132,9 +159,8 @@ fun ExpiryDetailScreen(
             }
             else -> {
                 DetailContent(
-                    item = uiState.item,
+                    item = item,
                     status = uiState.status,
-                    onMarkRenewed = onMarkRenewed,
                     onDeleteClicked = onDeleteClicked,
                     modifier = Modifier.padding(innerPadding)
                 )
@@ -147,7 +173,7 @@ fun ExpiryDetailScreen(
             onDismissRequest = onDeleteDismissed,
             title = { Text("Delete item?") },
             text = {
-                Text("\"${uiState.item?.title}\" will be permanently removed and its reminder cancelled.")
+                Text("\"${item?.title}\" will be permanently removed and its reminder cancelled.")
             },
             confirmButton = {
                 TextButton(
@@ -168,7 +194,6 @@ fun ExpiryDetailScreen(
 private fun DetailContent(
     item: ExpiryItem,
     status: ExpiryStatus?,
-    onMarkRenewed: () -> Unit,
     onDeleteClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -177,7 +202,7 @@ private fun DetailContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Hero section — neutral surface, status communicated only through the chip
+        // Hero — neutral surface, status conveyed only through the chip
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -230,7 +255,8 @@ private fun DetailContent(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     DetailRow(
                         label = "Reminder",
-                        value = "${item.reminderDaysBefore} days before expiry"
+                        value = if (item.reminderDaysBefore == 0) "On due date"
+                                else "${item.reminderDaysBefore} days before expiry"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     DetailRow(label = "Recurrence", value = item.recurrence.displayName)
@@ -239,6 +265,16 @@ private fun DetailContent(
                         DetailRow(
                             label = "Expected cost",
                             value = CurrencyFormatter.format(item.amountPaise)
+                        )
+                    }
+                    item.lastRenewedAt?.let { instant ->
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                        DetailRow(
+                            label = "Last renewed",
+                            value = instant
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                                .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                         )
                     }
                 }
@@ -266,26 +302,6 @@ private fun DetailContent(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                }
-            }
-
-            if (!item.isCompleted) {
-                val renewLabel = if (item.recurrence != RecurrenceType.NONE)
-                    "Mark as renewed"
-                else
-                    "Mark as completed"
-                Button(
-                    onClick = onMarkRenewed,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 14.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.size(8.dp))
-                    Text(renewLabel, style = MaterialTheme.typography.labelLarge)
                 }
             }
 

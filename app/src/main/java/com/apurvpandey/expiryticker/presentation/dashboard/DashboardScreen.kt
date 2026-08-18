@@ -1,8 +1,11 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,8 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -33,10 +36,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,8 +46,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -98,23 +98,9 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    if (uiState.isSearchActive) {
-                        TextField(
-                            value = uiState.searchQuery,
-                            onValueChange = onSearchQueryChanged,
-                            placeholder = { Text("Search items…") },
-                            singleLine = true,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
+            Column {
+                TopAppBar(
+                    title = {
                         Column {
                             Text(
                                 text = "ExpiryTicker",
@@ -127,29 +113,55 @@ fun DashboardScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onToggleSearch) {
-                        Icon(
-                            if (uiState.isSearchActive) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = if (uiState.isSearchActive) "Close search" else "Search"
-                        )
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    },
+                    actions = {
+                        IconButton(onClick = onToggleSearch) {
+                            Icon(
+                                if (uiState.isSearchActive) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = if (uiState.isSearchActive) "Close search" else "Search"
+                            )
+                        }
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+                AnimatedVisibility(
+                    visible = uiState.isSearchActive,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    OutlinedTextField(
+                        value = uiState.searchQuery,
+                        onValueChange = onSearchQueryChanged,
+                        placeholder = { Text("Search items…") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            if (uiState.searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { onSearchQueryChanged("") }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add item") }
+                text = { Text("New reminder") }
             )
         }
     ) { innerPadding ->
@@ -157,7 +169,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -174,19 +186,11 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        label = "Next 7 days",
+                        label = "Due soon",
                         count = uiState.next7DaysCount,
                         icon = Icons.Outlined.Schedule,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryCard(
-                        label = "Next 30 days",
-                        count = uiState.next30DaysCount,
-                        icon = Icons.Outlined.CalendarMonth,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -194,11 +198,18 @@ fun DashboardScreen(
 
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(DashboardFilter.values()) { filter ->
+                    items(DashboardFilter.entries) { filter ->
                         FilterChip(
                             selected = uiState.currentFilter == filter,
                             onClick = { onFilterSelected(filter) },
-                            label = { Text(filter.label) }
+                            label = { Text(filter.label) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = filterIcon(filter),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         )
                     }
                 }
@@ -225,6 +236,13 @@ fun DashboardScreen(
             item { Spacer(Modifier.height(80.dp)) }
         }
     }
+}
+
+private fun filterIcon(filter: DashboardFilter): ImageVector = when (filter) {
+    DashboardFilter.ALL -> Icons.AutoMirrored.Outlined.List
+    DashboardFilter.OVERDUE -> Icons.Outlined.Warning
+    DashboardFilter.UPCOMING -> Icons.Outlined.Schedule
+    DashboardFilter.COMPLETED -> Icons.Outlined.CheckCircle
 }
 
 @Composable
@@ -276,20 +294,12 @@ private fun EmptyStateContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+        )
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
