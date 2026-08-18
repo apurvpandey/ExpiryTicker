@@ -31,10 +31,10 @@ class ExpiryItemRepositoryImpl(private val dao: ExpiryItemDao) : ExpiryItemRepos
 private fun ExpiryItemEntity.toDomain(): ExpiryItem = ExpiryItem(
     id = id,
     title = title,
-    category = RenewalCategory.valueOf(category),
+    category = runCatching { RenewalCategory.valueOf(category) }.getOrDefault(RenewalCategory.OTHER),
     dueDate = LocalDate.parse(dueDate),
     reminderDaysBefore = reminderDaysBefore,
-    recurrence = RecurrenceType.valueOf(recurrence),
+    recurrence = runCatching { RecurrenceType.valueOf(recurrence) }.getOrDefault(RecurrenceType.NONE),
     notes = notes,
     amountPaise = amountPaise,
     isCompleted = isCompleted,

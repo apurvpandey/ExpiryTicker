@@ -3,6 +3,7 @@ package com.apurvpandey.expiryticker
 import android.content.Context
 import androidx.room.Room
 import com.apurvpandey.expiryticker.data.local.database.ExpiryTickerDatabase
+import com.apurvpandey.expiryticker.data.local.database.MIGRATION_1_2
 import com.apurvpandey.expiryticker.data.preferences.AppPreferencesDataStore
 import com.apurvpandey.expiryticker.data.repository.ExpiryItemRepositoryImpl
 import com.apurvpandey.expiryticker.domain.repository.ExpiryItemRepository
@@ -14,7 +15,9 @@ class AppContainer(context: Context) {
         context.applicationContext,
         ExpiryTickerDatabase::class.java,
         "expiry_ticker.db"
-    ).build()
+    )
+        .addMigrations(MIGRATION_1_2)
+        .build()
 
     val expiryItemRepository: ExpiryItemRepository =
         ExpiryItemRepositoryImpl(database.expiryItemDao())
