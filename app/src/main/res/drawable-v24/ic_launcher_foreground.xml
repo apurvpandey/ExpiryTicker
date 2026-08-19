@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Adaptive icon foreground — 108×108dp canvas; safe zone 18–90 (72dp centred).
-    Concept: calendar frame + renewal tick.
-    The inner body is transparent (evenOdd) so the background colour shows through.
-    No hardcoded colour-matching between foreground and background layers.
+    Concept: calendar frame + hourglass (time/expiry).
+    The inner body is transparent (evenOdd) so the background gradient shows through.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -24,8 +23,7 @@
     <!--
         Calendar frame (white) with body punched out via evenOdd.
         Outer rect: x:18–90, y:26–94, corner radius ≈ 8.
-        Inner cutout: body area y:46–90 (header strip y:26–46 stays white).
-        The resulting shape is a U-shaped header + 4-dp side/bottom border.
+        Inner cutout: body area y:46–90, inset 4dp each side.
     -->
     <path
         android:fillColor="#FFFFFF"
@@ -34,14 +32,22 @@
                           M22,46 L86,46 L86,84 Q86,90 82,90 L26,90 Q22,90 22,84 Z"/>
 
     <!--
-        Bold check mark — white rounded stroke, centred in the transparent body area.
-        Body spans y:46–94; visual centre ≈ y=70.
+        Hourglass centred in the transparent body (body: x:22–86, y:46–90, centre y=68).
+        Top triangle: tip at (54,52), base across y=66.
+        Waist: 8dp wide connector between y=66 and y=72.
+        Bottom triangle: base across y=72, tip at (54,86).
+        Total height 34dp, width 28dp at widest — bold and readable at 48dp icon size.
     -->
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="8.5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M28,71 L44,87 L80,54"/>
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,52 L40,66 L68,66 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,66 L58,66 L58,72 L50,72 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,86 L40,72 L68,72 Z"/>
+
 </vector>
