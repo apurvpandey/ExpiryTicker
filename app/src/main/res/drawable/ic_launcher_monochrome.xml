@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Monochrome adaptive icon — used for Material You themed icons (API 33+).
-    The system tints all opaque pixels with the user's theme colour.
-    Uses evenOdd fill to punch a transparent window in the calendar body,
-    so only the frame + header + binding tabs + checkmark are tinted.
+    Monochrome adaptive icon — Material You themed icons (API 33+).
+    The system tints all opaque pixels with the user's wallpaper-extracted colour.
+    Structure mirrors the foreground: evenOdd frame (transparent body) + bold tick.
+    Fill colour is irrelevant; only opacity matters for monochrome tinting.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -11,31 +11,29 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Binding tabs -->
+    <!-- Left binding tab -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M32,16 Q32,12 36,12 Q40,12 40,16 L40,32 Q40,36 36,36 Q32,36 32,32 Z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M68,16 Q68,12 72,12 Q76,12 76,16 L76,32 Q76,36 72,36 Q68,36 68,32 Z"/>
+        android:pathData="M31,18 Q31,14 36,14 Q41,14 41,18 L41,34 Q41,36 36,36 Q31,36 31,34 Z"/>
 
-    <!--
-        Calendar frame — evenOdd fill so the inner subpath is transparent.
-        Outer: calendar rounded rect. Inner subpath: inner body area.
-        Together they render only the border + header strip.
-    -->
+    <!-- Right binding tab -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M67,18 Q67,14 72,14 Q77,14 77,18 L77,34 Q77,36 72,36 Q67,36 67,34 Z"/>
+
+    <!-- Calendar frame + transparent body (evenOdd) -->
     <path
         android:fillColor="#FFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M20,34 Q20,26 28,26 L80,26 Q88,26 88,34 L88,84 Q88,92 80,92 L28,92 Q20,92 20,84 Z
-                          M24,46 L84,46 L84,84 Q84,88 80,88 L28,88 Q24,88 24,84 Z"/>
+        android:pathData="M18,34 Q18,26 26,26 L82,26 Q90,26 90,34 L90,84 Q90,94 82,94 L26,94 Q18,94 18,84 Z
+                          M22,46 L86,46 L86,84 Q86,90 82,90 L26,90 Q22,90 22,84 Z"/>
 
-    <!-- Checkmark inside the transparent body area -->
+    <!-- Bold check mark -->
     <path
         android:fillColor="#00000000"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
+        android:strokeWidth="8.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M31,68 L46,83 L77,53"/>
+        android:pathData="M28,71 L44,87 L80,54"/>
 </vector>

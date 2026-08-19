@@ -1,11 +1,13 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Add
@@ -44,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -102,6 +106,10 @@ fun DashboardScreen(
 ) {
     val todayLabel = remember {
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+    }
+    val listState = rememberLazyListState()
+    val isFabExpanded by remember {
+        derivedStateOf { !listState.isScrollInProgress && listState.firstVisibleItemIndex < 2 }
     }
 
     Scaffold(
@@ -167,13 +175,15 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
+                expanded = isFabExpanded,
                 onClick = onNavigateToAdd,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                icon = { Icon(Icons.Default.Add, contentDescription = "Add item") },
                 text = { Text("Add item") }
             )
         }
     ) { innerPadding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
@@ -231,12 +241,16 @@ fun DashboardScreen(
                 }
             }
 
+            // Animated empty ↔ populated transition
             if (!uiState.isLoading && uiState.displayItems.isEmpty()) {
-                item {
-                    EmptyState(
-                        filter = uiState.currentFilter,
-                        onAddItem = onNavigateToAdd
-                    )
+                item(key = "empty_state") {
+                    AnimatedContent(
+                        targetState = uiState.currentFilter,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "empty_content"
+                    ) { filter ->
+                        EmptyState(filter = filter, onAddItem = onNavigateToAdd)
+                    }
                 }
             } else {
                 items(uiState.displayItems, key = { it.item.id }) { ws ->
@@ -360,7 +374,7 @@ private val previewItems = listOf(
     ),
     ExpiryItemWithStatus(
         item = ExpiryItem(
-            id = 3L, title = "Netflix Subscription", category = RenewalCategory.SUBSCRIPTION,
+            id = 3L, title = "Netflix", category = RenewalCategory.SUBSCRIPTION,
             dueDate = previewToday.plusDays(22), recurrence = RecurrenceType.MONTHLY,
             amountPaise = 64900
         ),

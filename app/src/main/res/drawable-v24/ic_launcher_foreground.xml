@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Adaptive icon foreground — 108×108dp, safe zone 18–90 (72dp centred).
-    Design: white calendar frame with binding tabs; indigo inner body
-    (matches background layer so it reads as a transparent window);
-    white checkmark tick inside the body.
+    Adaptive icon foreground — 108×108dp canvas; safe zone 18–90 (72dp centred).
+    Concept: calendar frame + renewal tick.
+    The inner body is transparent (evenOdd) so the background colour shows through.
+    No hardcoded colour-matching between foreground and background layers.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -11,45 +11,37 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Left binding tab — pill centred at x=36, y:14–36 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M31,18 Q31,14 36,14 Q41,14 41,18 L41,34 Q41,36 36,36 Q31,36 31,34 Z"/>
+
+    <!-- Right binding tab — pill centred at x=72, y:14–36 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M67,18 Q67,14 72,14 Q77,14 77,18 L77,34 Q77,36 72,36 Q67,36 67,34 Z"/>
+
     <!--
-        Binding tabs — two pill-shaped white tabs that protrude above
-        the calendar top edge, simulating real calendar ring binding.
-        Left tab centred at x=36, right at x=72.
+        Calendar frame (white) with body punched out via evenOdd.
+        Outer rect: x:18–90, y:26–94, corner radius ≈ 8.
+        Inner cutout: body area y:46–90 (header strip y:26–46 stays white).
+        The resulting shape is a U-shaped header + 4-dp side/bottom border.
     -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M32,16 Q32,12 36,12 Q40,12 40,16 L40,32 Q40,36 36,36 Q32,36 32,32 Z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M68,16 Q68,12 72,12 Q76,12 76,16 L76,32 Q76,36 72,36 Q68,36 68,32 Z"/>
+        android:fillType="evenOdd"
+        android:pathData="M18,34 Q18,26 26,26 L82,26 Q90,26 90,34 L90,84 Q90,94 82,94 L26,94 Q18,94 18,84 Z
+                          M22,46 L86,46 L86,84 Q86,90 82,90 L26,90 Q22,90 22,84 Z"/>
 
     <!--
-        Calendar outer frame — white rounded rectangle (rx=8).
-        Spans x:20–88, y:26–92. The 4 dp border around the inner
-        body and the 20 dp white header area are both part of this shape.
-    -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M20,34 Q20,26 28,26 L80,26 Q88,26 88,34 L88,84 Q88,92 80,92 L28,92 Q20,92 20,84 Z"/>
-
-    <!--
-        Calendar inner body — painted indigo to match the background layer,
-        creating the visual "window" effect inside the calendar frame.
-        Top edge is flush with the header boundary (y=46); bottom corners rx=4.
-    -->
-    <path
-        android:fillColor="#1953CC"
-        android:pathData="M24,46 L84,46 L84,84 Q84,88 80,88 L28,88 Q24,88 24,84 Z"/>
-
-    <!--
-        Checkmark — thick white stroke with round caps, centred in the
-        indigo body area. Reads as "renewed / completed".
+        Bold check mark — white rounded stroke, centred in the transparent body area.
+        Body spans y:46–94; visual centre ≈ y=70.
     -->
     <path
         android:fillColor="#00000000"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
+        android:strokeWidth="8.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M31,68 L46,83 L77,53"/>
+        android:pathData="M28,71 L44,87 L80,54"/>
 </vector>
