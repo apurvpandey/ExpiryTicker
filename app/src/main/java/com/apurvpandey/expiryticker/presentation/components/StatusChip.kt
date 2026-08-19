@@ -57,7 +57,7 @@ private fun ExpiryStatus.toShortText(): String = when (this) {
     is ExpiryStatus.Completed -> "Done"
     is ExpiryStatus.DueToday -> "Due today"
     is ExpiryStatus.Overdue -> if (daysOverdue == 1) "1d overdue" else "${daysOverdue}d overdue"
-    is ExpiryStatus.Active -> if (daysRemaining <= 7) "${daysRemaining}d left" else "$daysRemaining days"
+    is ExpiryStatus.Active -> "${daysRemaining}d left"
 }
 
 private fun statusIcon(status: ExpiryStatus): ImageVector = when (status) {

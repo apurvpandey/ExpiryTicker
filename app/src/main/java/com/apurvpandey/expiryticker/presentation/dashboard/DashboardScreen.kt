@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Warning
@@ -294,7 +295,7 @@ private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
             "No renewals or expiries in the near future."
         )
         DashboardFilter.COMPLETED -> Triple(
-            Icons.Outlined.CheckCircle,
+            Icons.Outlined.TaskAlt,
             "No completed items",
             "Items you mark as renewed or completed will appear here."
         )

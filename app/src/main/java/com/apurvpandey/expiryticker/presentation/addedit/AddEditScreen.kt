@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -248,23 +249,24 @@ fun AddEditScreen(
             HorizontalDivider()
             Spacer(Modifier.height(20.dp))
 
-            // Due date
-            OutlinedTextField(
-                value = uiState.dueDate?.format(
-                    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                ) ?: "",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Due date *") },
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Pick date")
-                    }
-                },
-                isError = uiState.dueDateError != null,
-                supportingText = uiState.dueDateError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Due date — entire field is tappable
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = uiState.dueDate?.format(
+                        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                    ) ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Due date *") },
+                    trailingIcon = {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+                    },
+                    isError = uiState.dueDateError != null,
+                    supportingText = uiState.dueDateError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
+            }
 
             Spacer(Modifier.height(20.dp))
             SectionLabel("Remind me")

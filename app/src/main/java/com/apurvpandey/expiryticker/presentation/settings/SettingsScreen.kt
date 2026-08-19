@@ -241,7 +241,8 @@ fun SettingsScreen(
                     }
                 }
             },
-            confirmButton = {
+            confirmButton = {},
+            dismissButton = {
                 TextButton(onClick = { showReminderDialog = false }) { Text("Cancel") }
             }
         )

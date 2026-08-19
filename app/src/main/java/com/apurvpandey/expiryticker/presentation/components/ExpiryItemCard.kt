@@ -1,6 +1,10 @@
 package com.apurvpandey.expiryticker.presentation.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,7 +80,11 @@ fun ExpiryItemCard(
                 )
             }
 
-            AnimatedContent(targetState = status, label = "status") { s ->
+            AnimatedContent(
+                targetState = status,
+                transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
+                label = "status"
+            ) { s ->
                 StatusChip(status = s)
             }
         }
