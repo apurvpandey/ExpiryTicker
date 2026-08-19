@@ -24,7 +24,8 @@ data class ExpiryDetailUiState(
     val status: ExpiryStatus? = null,
     val showDeleteDialog: Boolean = false,
     val isDeleted: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val snackbarMessage: String? = null
 )
 
 class ExpiryDetailViewModel(
@@ -62,6 +63,7 @@ class ExpiryDetailViewModel(
 
     fun showDeleteConfirmation() = _uiState.update { it.copy(showDeleteDialog = true) }
     fun dismissDeleteConfirmation() = _uiState.update { it.copy(showDeleteDialog = false) }
+    fun clearSnackbarMessage() = _uiState.update { it.copy(snackbarMessage = null) }
 
     fun deleteItem() {
         val item = _uiState.value.item ?: return
@@ -77,7 +79,6 @@ class ExpiryDetailViewModel(
         viewModelScope.launch {
             val now = Instant.now()
             if (item.recurrence != RecurrenceType.NONE) {
-                // Calculate next due date; LocalDate.plusMonths/plusYears handles end-of-month
                 val nextDueDate = RecurrenceCalculator.calculateNextDueDate(item.dueDate, item.recurrence)
                 val updated = item.copy(
                     dueDate = nextDueDate,
@@ -87,8 +88,8 @@ class ExpiryDetailViewModel(
                 repository.update(updated)
                 reminderScheduler.cancelReminder(item.id)
                 reminderScheduler.scheduleReminder(updated)
+                _uiState.update { it.copy(snackbarMessage = "Marked as renewed") }
             } else {
-                // Non-recurring: mark as completed
                 val completed = item.copy(
                     isCompleted = true,
                     lastRenewedAt = now,
@@ -96,6 +97,7 @@ class ExpiryDetailViewModel(
                 )
                 repository.update(completed)
                 reminderScheduler.cancelReminder(item.id)
+                _uiState.update { it.copy(snackbarMessage = "Marked as completed") }
             }
         }
     }

@@ -20,8 +20,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -117,24 +116,25 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // --- Notifications ---
-            SectionHeader("Notifications")
+            // ─── Notifications ───────────────────────────────────────────
+            SectionLabel("Notifications")
             Spacer(Modifier.height(4.dp))
-            SettingsCard {
+
+            SettingsGroup {
                 val currentReminderLabel = reminderOptions
                     .find { it.first == uiState.defaultReminderDays }?.second
                     ?: "${uiState.defaultReminderDays} days before"
+
                 ListItem(
                     headlineContent = { Text("Default reminder") },
                     supportingContent = { Text(currentReminderLabel) },
                     leadingContent = {
                         Icon(Icons.Default.Schedule, contentDescription = null)
                     },
-                    colors = ListItemDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                     modifier = Modifier.clickable { showReminderDialog = true }
                 )
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
@@ -143,9 +143,7 @@ fun SettingsScreen(
                         leadingContent = {
                             Icon(Icons.Default.Notifications, contentDescription = null)
                         },
-                        colors = ListItemDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        ),
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         modifier = Modifier.clickable {
                             val intent = Intent(SystemSettings.ACTION_APP_NOTIFICATION_SETTINGS)
                                 .putExtra(SystemSettings.EXTRA_APP_PACKAGE, context.packageName)
@@ -155,16 +153,17 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // --- Appearance ---
-            SectionHeader("Appearance")
+            // ─── Appearance ──────────────────────────────────────────────
+            SectionLabel("Appearance")
             Spacer(Modifier.height(4.dp))
-            SettingsCard {
+
+            SettingsGroup {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
@@ -188,21 +187,20 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // --- About ---
-            SectionHeader("About")
+            // ─── About ───────────────────────────────────────────────────
+            SectionLabel("About")
             Spacer(Modifier.height(4.dp))
-            SettingsCard {
+
+            SettingsGroup {
                 ListItem(
                     headlineContent = { Text("ExpiryTicker") },
                     supportingContent = { Text("Version ${BuildConfig.VERSION_NAME}") },
                     leadingContent = {
                         Icon(Icons.Default.Info, contentDescription = null)
                     },
-                    colors = ListItemDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                 )
             }
 
@@ -251,12 +249,10 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsCard(content: @Composable () -> Unit) {
-    Card(
+private fun SettingsGroup(content: @Composable () -> Unit) {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = MaterialTheme.shapes.large
     ) {
         content()
@@ -264,7 +260,7 @@ private fun SettingsCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SectionHeader(text: String) {
+private fun SectionLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,

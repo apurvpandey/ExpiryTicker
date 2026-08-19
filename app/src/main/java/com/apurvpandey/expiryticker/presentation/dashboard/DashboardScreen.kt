@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -49,12 +51,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
+import com.apurvpandey.expiryticker.domain.model.ExpiryItem
+import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
+import com.apurvpandey.expiryticker.domain.model.RecurrenceType
+import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
 import com.apurvpandey.expiryticker.presentation.components.SummaryCard
+import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -161,7 +169,7 @@ fun DashboardScreen(
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("New reminder") }
+                text = { Text("Add item") }
             )
         }
     ) { innerPadding ->
@@ -186,9 +194,17 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        label = "Due soon",
+                        label = "Next 7 days",
                         count = uiState.next7DaysCount,
                         icon = Icons.Outlined.Schedule,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SummaryCard(
+                        label = "Next 30 days",
+                        count = uiState.next30DaysCount,
+                        icon = Icons.Outlined.CalendarMonth,
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(1f)
@@ -251,7 +267,7 @@ private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
         DashboardFilter.ALL -> Triple(
             Icons.Outlined.Inbox,
             "Nothing to track yet",
-            "Add your first expiry or renewal and ExpiryTicker will remind you before it's due."
+            "Add an expiry or renewal and ExpiryTicker will remind you before it's due."
         )
         DashboardFilter.OVERDUE -> Triple(
             Icons.Outlined.CheckCircle,
@@ -298,7 +314,7 @@ private fun EmptyStateContent(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
         )
         Text(
             text = title,
@@ -314,11 +330,94 @@ private fun EmptyStateContent(
         )
         if (showAddButton) {
             Spacer(Modifier.height(4.dp))
-            androidx.compose.material3.Button(onClick = onAddItem) {
+            Button(onClick = onAddItem) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
                 Text("Add your first item")
             }
         }
+    }
+}
+
+// ─── Previews ───────────────────────────────────────────────────────────────
+
+private val previewToday: LocalDate = LocalDate.of(2026, 8, 19)
+
+private val previewItems = listOf(
+    ExpiryItemWithStatus(
+        item = ExpiryItem(
+            id = 1L, title = "Car Insurance", category = RenewalCategory.INSURANCE,
+            dueDate = previewToday.plusDays(5), recurrence = RecurrenceType.YEARLY
+        ),
+        status = ExpiryStatus.Active(5)
+    ),
+    ExpiryItemWithStatus(
+        item = ExpiryItem(
+            id = 2L, title = "Domain Registration", category = RenewalCategory.DOMAIN,
+            dueDate = previewToday.minusDays(2), amountPaise = 150000
+        ),
+        status = ExpiryStatus.Overdue(2)
+    ),
+    ExpiryItemWithStatus(
+        item = ExpiryItem(
+            id = 3L, title = "Netflix Subscription", category = RenewalCategory.SUBSCRIPTION,
+            dueDate = previewToday.plusDays(22), recurrence = RecurrenceType.MONTHLY,
+            amountPaise = 64900
+        ),
+        status = ExpiryStatus.Active(22)
+    ),
+)
+
+@Preview(showBackground = true, name = "Dashboard – Normal")
+@Composable
+private fun DashboardPreviewNormal() {
+    ExpiryTickerTheme {
+        DashboardScreen(
+            uiState = DashboardUiState(
+                isLoading = false,
+                overdueCount = 1,
+                next7DaysCount = 2,
+                next30DaysCount = 3,
+                displayItems = previewItems
+            ),
+            onNavigateToAdd = {}, onNavigateToDetail = {},
+            onNavigateToSettings = {}, onFilterSelected = {},
+            onSearchQueryChanged = {}, onToggleSearch = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Dashboard – Empty")
+@Composable
+private fun DashboardPreviewEmpty() {
+    ExpiryTickerTheme {
+        DashboardScreen(
+            uiState = DashboardUiState(isLoading = false),
+            onNavigateToAdd = {}, onNavigateToDetail = {},
+            onNavigateToSettings = {}, onFilterSelected = {},
+            onSearchQueryChanged = {}, onToggleSearch = {}
+        )
+    }
+}
+
+@Preview(
+    showBackground = true, name = "Dashboard – Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun DashboardPreviewDark() {
+    ExpiryTickerTheme {
+        DashboardScreen(
+            uiState = DashboardUiState(
+                isLoading = false,
+                overdueCount = 2,
+                next7DaysCount = 1,
+                next30DaysCount = 4,
+                displayItems = previewItems
+            ),
+            onNavigateToAdd = {}, onNavigateToDetail = {},
+            onNavigateToSettings = {}, onFilterSelected = {},
+            onSearchQueryChanged = {}, onToggleSearch = {}
+        )
     }
 }

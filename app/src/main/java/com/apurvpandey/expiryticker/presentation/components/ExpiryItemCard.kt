@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
+import java.time.format.DateTimeFormatter
+
+private val itemDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 
 @Composable
 fun ExpiryItemCard(
@@ -55,10 +59,12 @@ fun ExpiryItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 val subtitle = buildString {
-                    append(item.category.displayName)
+                    append(item.dueDate.format(itemDateFormatter))
+                    append("  ·  ")
                     if (item.amountPaise != null) {
-                        append("  ·  ")
                         append(CurrencyFormatter.format(item.amountPaise))
+                    } else {
+                        append(item.category.displayName)
                     }
                 }
                 Text(
@@ -70,7 +76,9 @@ fun ExpiryItemCard(
                 )
             }
 
-            StatusChip(status = status)
+            AnimatedContent(targetState = status, label = "status") { s ->
+                StatusChip(status = s)
+            }
         }
     }
 }

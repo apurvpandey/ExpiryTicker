@@ -1,6 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.details
 
-import androidx.compose.foundation.background
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +22,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -31,15 +29,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,8 +51,11 @@ import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
+import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import com.apurvpandey.expiryticker.presentation.components.StatusChip
+import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -70,13 +76,22 @@ fun ExpiryDetailRoute(
         )
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isDeleted) {
         if (uiState.isDeleted) onNavigateBack()
     }
 
+    LaunchedEffect(uiState.snackbarMessage) {
+        uiState.snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSnackbarMessage()
+        }
+    }
+
     ExpiryDetailScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
         onNavigateToEdit = { uiState.item?.id?.let(onNavigateToEdit) },
         onMarkRenewed = viewModel::markRenewed,
@@ -90,6 +105,7 @@ fun ExpiryDetailRoute(
 @Composable
 fun ExpiryDetailScreen(
     uiState: ExpiryDetailUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onNavigateBack: () -> Unit,
     onNavigateToEdit: () -> Unit,
     onMarkRenewed: () -> Unit,
@@ -100,6 +116,7 @@ fun ExpiryDetailScreen(
     val item = uiState.item
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -202,27 +219,29 @@ private fun DetailContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Hero — neutral surface, status conveyed only through the chip
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .padding(horizontal = 20.dp, vertical = 24.dp)
+        // Hero section
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 CategoryIconBadge(
                     category = item.category,
-                    size = 56.dp,
-                    iconSize = 28.dp
+                    size = 52.dp,
+                    iconSize = 26.dp
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (status != null) {
+                        StatusChip(status = status)
+                    }
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -230,106 +249,99 @@ private fun DetailContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (status != null) {
-                        StatusChip(status = status)
-                    }
                 }
             }
         }
 
+        // Detail rows
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            DetailRow(
+                label = "Due date",
+                value = item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+            DetailRow(
+                label = "Reminder",
+                value = if (item.reminderDaysBefore == 0) "On due date"
+                        else "${item.reminderDaysBefore} days before"
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+            DetailRow(label = "Recurrence", value = item.recurrence.displayName)
+            if (item.amountPaise != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                DetailRow(
+                    label = "Expected cost",
+                    value = CurrencyFormatter.format(item.amountPaise)
                 )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    DetailRow(
-                        label = "Due date",
-                        value = item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                    DetailRow(
-                        label = "Reminder",
-                        value = if (item.reminderDaysBefore == 0) "On due date"
-                                else "${item.reminderDaysBefore} days before expiry"
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                    DetailRow(label = "Recurrence", value = item.recurrence.displayName)
-                    if (item.amountPaise != null) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                        DetailRow(
-                            label = "Expected cost",
-                            value = CurrencyFormatter.format(item.amountPaise)
-                        )
-                    }
-                    item.lastRenewedAt?.let { instant ->
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                        DetailRow(
-                            label = "Last renewed",
-                            value = instant
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                                .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                        )
-                    }
-                }
             }
-
-            if (item.notes.isNotBlank()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Notes",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = item.notes,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-
-            TextButton(
-                onClick = onDeleteClicked,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+            item.lastRenewedAt?.let { instant ->
+                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                DetailRow(
+                    label = "Last renewed",
+                    value = instant
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                 )
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.size(6.dp))
-                Text("Delete item", style = MaterialTheme.typography.labelLarge)
             }
-
-            Spacer(Modifier.height(8.dp))
         }
+
+        if (item.notes.isNotBlank()) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Notes",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = item.notes,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        TextButton(
+            onClick = onDeleteClicked,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.size(6.dp))
+            Text("Delete item", style = MaterialTheme.typography.labelLarge)
+        }
+
+        Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -344,6 +356,73 @@ private fun DetailRow(label: String, value: String) {
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(0.55f)
+        )
+    }
+}
+
+// ─── Previews ────────────────────────────────────────────────────────────────
+
+private val previewItem = ExpiryItem(
+    id = 1L,
+    title = "Car Insurance",
+    category = RenewalCategory.INSURANCE,
+    dueDate = LocalDate.of(2026, 8, 24),
+    recurrence = RecurrenceType.YEARLY,
+    reminderDaysBefore = 7,
+    amountPaise = 1200000L,
+    notes = "Renew via HDFC ERGO portal. Policy number: HE-2024-001."
+)
+
+@Preview(showBackground = true, name = "Detail – Upcoming")
+@Composable
+private fun DetailPreviewUpcoming() {
+    ExpiryTickerTheme {
+        ExpiryDetailScreen(
+            uiState = ExpiryDetailUiState(
+                isLoading = false,
+                item = previewItem,
+                status = ExpiryStatus.Active(5)
+            ),
+            onNavigateBack = {}, onNavigateToEdit = {},
+            onMarkRenewed = {}, onDeleteClicked = {},
+            onDeleteConfirmed = {}, onDeleteDismissed = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Detail – Overdue")
+@Composable
+private fun DetailPreviewOverdue() {
+    ExpiryTickerTheme {
+        ExpiryDetailScreen(
+            uiState = ExpiryDetailUiState(
+                isLoading = false,
+                item = previewItem.copy(dueDate = LocalDate.of(2026, 8, 15)),
+                status = ExpiryStatus.Overdue(4)
+            ),
+            onNavigateBack = {}, onNavigateToEdit = {},
+            onMarkRenewed = {}, onDeleteClicked = {},
+            onDeleteConfirmed = {}, onDeleteDismissed = {}
+        )
+    }
+}
+
+@Preview(
+    showBackground = true, name = "Detail – Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun DetailPreviewDark() {
+    ExpiryTickerTheme {
+        ExpiryDetailScreen(
+            uiState = ExpiryDetailUiState(
+                isLoading = false,
+                item = previewItem,
+                status = ExpiryStatus.Active(5)
+            ),
+            onNavigateBack = {}, onNavigateToEdit = {},
+            onMarkRenewed = {}, onDeleteClicked = {},
+            onDeleteConfirmed = {}, onDeleteDismissed = {}
         )
     }
 }
