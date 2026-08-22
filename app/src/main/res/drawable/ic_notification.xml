@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Notification small icon — must be white paths on transparent background.
-    Using a bell shape: universally understood as "reminder".
+    Notification small icon — white paths on transparent background.
+    Calendar with a check mark dot: expiry/reminder concept.
+    Readable at status-bar size (24dp rendered ~18dp).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
+    <!-- Calendar body (outline via evenOdd) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M12,22c1.1,0 2,-0.9 2,-2L10,20c0,1.1 0.9,2 2,2zM18,16L18,11c0,-3.07 -1.63,-5.64 -4.5,-6.32L13.5,4c0,-0.83 -0.67,-1.5 -1.5,-1.5s-1.5,0.67 -1.5,1.5l0,0.68C7.64,5.36 6,7.92 6,11l0,5 -2,2 0,1 16,0 0,-1 -2,-2z" />
+        android:fillType="evenOdd"
+        android:pathData="M19,3 L18,3 L18,1 L16,1 L16,3 L8,3 L8,1 L6,1 L6,3 L5,3 C3.9,3 3,3.9 3,5 L3,19 C3,20.1 3.9,21 5,21 L19,21 C20.1,21 21,20.1 21,19 L21,5 C21,3.9 20.1,3 19,3 Z
+                          M5,9 L19,9 L19,19 L5,19 Z"/>
+
+    <!-- Check mark -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M8,14 L11,17 L16,11"/>
+
 </vector>

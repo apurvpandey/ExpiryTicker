@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Monochrome adaptive icon — Material You themed icons (API 33+).
-    Mirrors the foreground: evenOdd calendar frame + hourglass.
-    Fill colour is irrelevant; only opacity matters for tinting.
+    Calendar frame + check mark. Single-color silhouette, no gradients.
+    108x108dp canvas; key artwork in 72dp safe zone (18dp padding each side).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -10,30 +10,28 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Calendar binding tabs -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M31,18 Q31,14 36,14 Q41,14 41,18 L41,34 Q41,36 36,36 Q31,36 31,34 Z"/>
-
+        android:pathData="M38,18 Q38,14 42,14 Q46,14 46,18 L46,26 Q46,28 42,28 Q38,28 38,26 Z"/>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M67,18 Q67,14 72,14 Q77,14 77,18 L77,34 Q77,36 72,36 Q67,36 67,34 Z"/>
+        android:pathData="M62,18 Q62,14 66,14 Q70,14 70,18 L70,26 Q70,28 66,28 Q62,28 62,26 Z"/>
 
+    <!-- Calendar frame (evenOdd punches out body so background shows) -->
     <path
         android:fillColor="#FFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M18,34 Q18,26 26,26 L82,26 Q90,26 90,34 L90,84 Q90,94 82,94 L26,94 Q18,94 18,84 Z
-                          M22,46 L86,46 L86,84 Q86,90 82,90 L26,90 Q22,90 22,84 Z"/>
+        android:pathData="M22,26 Q22,20 28,20 L80,20 Q86,20 86,26 L86,84 Q86,90 80,90 L28,90 Q22,90 22,84 Z
+                          M26,38 L82,38 L82,84 Q82,86 80,86 L28,86 Q26,86 26,84 Z"/>
 
+    <!-- Check mark in lower-right, bold strokes -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,52 L40,66 L68,66 Z"/>
-
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M50,66 L58,66 L58,72 L50,72 Z"/>
-
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,86 L40,72 L68,72 Z"/>
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M42,64 L52,74 L68,52"/>
 
 </vector>

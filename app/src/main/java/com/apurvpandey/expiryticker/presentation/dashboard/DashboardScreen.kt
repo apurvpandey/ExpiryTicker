@@ -3,6 +3,7 @@ package com.apurvpandey.expiryticker.presentation.dashboard
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -44,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -54,10 +57,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.apurvpandey.expiryticker.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
@@ -278,12 +285,13 @@ private fun filterIcon(filter: DashboardFilter): ImageVector = when (filter) {
 
 @Composable
 private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
+    if (filter == DashboardFilter.ALL) {
+        IllustrationEmptyState(onAddItem = onAddItem)
+        return
+    }
+
     val (icon, title, subtitle) = when (filter) {
-        DashboardFilter.ALL -> Triple(
-            Icons.Outlined.Inbox,
-            "Nothing to track yet",
-            "Add an expiry or renewal and ExpiryTicker will remind you before it's due."
-        )
+        DashboardFilter.ALL -> Triple(Icons.Outlined.Inbox, "", "")
         DashboardFilter.OVERDUE -> Triple(
             Icons.Outlined.CheckCircle,
             "You're all caught up",
@@ -305,9 +313,57 @@ private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
         icon = icon,
         title = title,
         subtitle = subtitle,
-        showAddButton = filter == DashboardFilter.ALL,
         onAddItem = onAddItem
     )
+}
+
+@Composable
+private fun IllustrationEmptyState(onAddItem: () -> Unit) {
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(durationMillis = 200))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 40.dp, horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.widthIn(max = 280.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.img_empty_state),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
+            Text(
+                text = "Nothing to track yet",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Add an expiry or renewal and ExpiryTicker will remind you before it's due.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(4.dp))
+            Button(onClick = onAddItem) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text("Add your first item")
+            }
+        }
+    }
 }
 
 @Composable
@@ -315,7 +371,6 @@ private fun EmptyStateContent(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    showAddButton: Boolean,
     onAddItem: () -> Unit
 ) {
     Column(
@@ -343,14 +398,6 @@ private fun EmptyStateContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        if (showAddButton) {
-            Spacer(Modifier.height(4.dp))
-            Button(onClick = onAddItem) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(6.dp))
-                Text("Add your first item")
-            }
-        }
     }
 }
 
