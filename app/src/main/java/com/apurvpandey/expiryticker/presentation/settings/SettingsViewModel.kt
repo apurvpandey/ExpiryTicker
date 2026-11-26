@@ -25,7 +25,8 @@ import kotlinx.coroutines.withContext
 data class SettingsUiState(
     val defaultReminderDays: Int = 7,
     val reminderHour: Int = 9,
-    val appTheme: AppTheme = AppTheme.SYSTEM
+    val appTheme: AppTheme = AppTheme.SYSTEM,
+    val appLockEnabled: Boolean = false
 )
 
 class SettingsViewModel(
@@ -37,9 +38,10 @@ class SettingsViewModel(
     val uiState = combine(
         appPreferences.defaultReminderDays,
         appPreferences.reminderHour,
-        appPreferences.appTheme
-    ) { days, hour, theme ->
-        SettingsUiState(defaultReminderDays = days, reminderHour = hour, appTheme = theme)
+        appPreferences.appTheme,
+        appPreferences.appLockEnabled
+    ) { days, hour, theme, lock ->
+        SettingsUiState(defaultReminderDays = days, reminderHour = hour, appTheme = theme, appLockEnabled = lock)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -55,6 +57,14 @@ class SettingsViewModel(
 
     fun setReminderHour(hour: Int) {
         viewModelScope.launch { appPreferences.setReminderHour(hour) }
+    }
+
+    fun setAppLockEnabled(enabled: Boolean) {
+        viewModelScope.launch { appPreferences.setAppLockEnabled(enabled) }
+    }
+
+    fun showMessage(message: String) {
+        _messages.tryEmit(message)
     }
 
     fun setAppTheme(theme: AppTheme) {

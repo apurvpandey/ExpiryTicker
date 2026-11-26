@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.FileDownload
@@ -12,6 +13,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import com.apurvpandey.expiryticker.notification.ExpiryNotificationManager
+import com.apurvpandey.expiryticker.security.AppLock
 import android.os.Build
 import android.provider.Settings as SystemSettings
 import androidx.compose.foundation.clickable
@@ -122,7 +124,14 @@ fun SettingsRoute(
             viewModel.restoreFrom(context.contentResolver, uri)
         },
         onRestoreDismissed = { pendingRestore = null },
-        onThemeChange = viewModel::setAppTheme
+        onThemeChange = viewModel::setAppTheme,
+        onAppLockChange = { enabled ->
+            if (enabled && !AppLock.isAvailable(context)) {
+                viewModel.showMessage("Set up a screen lock, fingerprint or face on this device first")
+            } else {
+                viewModel.setAppLockEnabled(enabled)
+            }
+        }
     )
 }
 
@@ -141,7 +150,8 @@ fun SettingsScreen(
     onRestore: () -> Unit = {},
     pendingRestore: android.net.Uri? = null,
     onRestoreConfirmed: (android.net.Uri) -> Unit = {},
-    onRestoreDismissed: () -> Unit = {}
+    onRestoreDismissed: () -> Unit = {},
+    onAppLockChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -259,6 +269,30 @@ fun SettingsScreen(
                         }
                     }
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ─── Privacy ─────────────────────────────────────────────────
+            SectionLabel("Privacy")
+            Spacer(Modifier.height(4.dp))
+
+            SettingsGroup {
+                ListItem(
+                    headlineContent = { Text("App lock") },
+                    supportingContent = {
+                        Text("Ask for fingerprint, face or screen lock when opening. Notifications and the widget still show item names.")
+                    },
+                    leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    trailingContent = {
+                        androidx.compose.material3.Switch(
+                            checked = uiState.appLockEnabled,
+                            onCheckedChange = onAppLockChange
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable { onAppLockChange(!uiState.appLockEnabled) }
+                )
             }
 
             Spacer(Modifier.height(16.dp))

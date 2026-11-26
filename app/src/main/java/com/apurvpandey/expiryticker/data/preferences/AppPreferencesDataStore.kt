@@ -3,6 +3,7 @@ package com.apurvpandey.expiryticker.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,6 +18,7 @@ class AppPreferencesDataStore(private val context: Context) {
 
     private val defaultReminderDaysKey = intPreferencesKey("default_reminder_days")
     private val reminderHourKey = intPreferencesKey("reminder_hour")
+    private val appLockKey = booleanPreferencesKey("app_lock_enabled")
     private val appThemeKey = stringPreferencesKey("app_theme")
 
     val defaultReminderDays: Flow<Int> = context.dataStore.data.map { prefs ->
@@ -29,6 +31,14 @@ class AppPreferencesDataStore(private val context: Context) {
 
     suspend fun setReminderHour(hour: Int) {
         context.dataStore.edit { prefs -> prefs[reminderHourKey] = hour.coerceIn(0, 23) }
+    }
+
+    val appLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[appLockKey] ?: false
+    }
+
+    suspend fun setAppLockEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[appLockKey] = enabled }
     }
 
     val appTheme: Flow<AppTheme> = context.dataStore.data.map { prefs ->

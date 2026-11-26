@@ -101,6 +101,9 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
 
+    // App lock
+    implementation(libs.androidx.biometric)
+
     // Home-screen widget
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
