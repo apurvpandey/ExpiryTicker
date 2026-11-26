@@ -7,6 +7,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
+import androidx.glance.ColorFilter
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.action.actionParametersOf
+import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.currentState
+import androidx.glance.layout.size
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import com.apurvpandey.expiryticker.R
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -37,6 +47,7 @@ import androidx.glance.LocalSize
 import com.apurvpandey.expiryticker.ExpiryTickerApplication
 import com.apurvpandey.expiryticker.MainActivity
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
+import com.apurvpandey.expiryticker.core.util.ConfirmTap
 import com.apurvpandey.expiryticker.core.util.WidgetRow
 import com.apurvpandey.expiryticker.core.util.WidgetSnapshot
 import com.apurvpandey.expiryticker.core.util.WidgetSnapshots
@@ -61,20 +72,27 @@ class ExpiryWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Responsive(setOf(SMALL, MEDIUM, LARGE))
 
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as ExpiryTickerApplication).container
         val items = container.expiryItemRepository.observeAll().first()
         val snapshot = WidgetSnapshots.build(items, LocalDate.now())
         provideContent {
+            val state = currentState<Preferences>()
+            // Only an unexpired arm counts, so a stale "Done?" never lingers in a re-render.
+            val armedId = state[ArmedItemKey]?.takeIf {
+                ConfirmTap.isArmed(it, state[ArmedAtKey], System.currentTimeMillis(), it)
+            }
             GlanceTheme(colors = WidgetColors) {
-                WidgetContent(context, snapshot, LocalSize.current)
+                WidgetContent(context, snapshot, LocalSize.current, armedId)
             }
         }
     }
 }
 
 @Composable
-private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, size: DpSize) {
+private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, size: DpSize, armedId: Long?) {
     val openApp = launch(context)
     val compact = size.width < 180.dp
     val maxRows = when {
@@ -95,11 +113,11 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, size: DpSi
         Spacer(GlanceModifier.height(8.dp))
         when {
             snapshot.rows.isEmpty() -> AllClear()
-            compact && size.height < 150.dp -> NextUp(context, snapshot.rows.first())
+            compact && size.height < 150.dp -> NextUp(context, snapshot.rows.first(), armedId)
             // Glance allows at most 10 children per Column: no spacer elements between rows,
             // spacing comes from each row's own bottom padding.
             else -> snapshot.rows.take(if (compact) maxRows.coerceAtMost(4) else maxRows).forEach { row ->
-                ItemRow(row, context, compact)
+                ItemRow(row, context, compact, armedId)
             }
         }
     }
@@ -154,7 +172,7 @@ private fun Header(context: Context, snapshot: WidgetSnapshot, compact: Boolean)
 }
 
 @Composable
-private fun NextUp(context: Context, row: WidgetRow) {
+private fun NextUp(context: Context, row: WidgetRow, armedId: Long?) {
     val c = row.status.countdown()
     Column(modifier = GlanceModifier.fillMaxWidth().clickable(launch(context, row.id))) {
         Text(
@@ -171,11 +189,13 @@ private fun NextUp(context: Context, row: WidgetRow) {
             maxLines = 2,
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         )
+        Spacer(GlanceModifier.height(8.dp))
+        DoneButton(row, armed = armedId == row.id)
     }
 }
 
 @Composable
-private fun ItemRow(row: WidgetRow, context: Context, compact: Boolean = false) {
+private fun ItemRow(row: WidgetRow, context: Context, compact: Boolean, armedId: Long?) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -213,6 +233,37 @@ private fun ItemRow(row: WidgetRow, context: Context, compact: Boolean = false) 
             Text(
                 text = row.status.shortLabel(),
                 style = TextStyle(color = accent(row.status), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            )
+        }
+        Spacer(GlanceModifier.width(8.dp))
+        DoneButton(row, armed = armedId == row.id)
+    }
+}
+
+/** Check button; after the first tap it grows into a "Done?" pill that waits for confirmation. */
+@Composable
+private fun DoneButton(row: WidgetRow, armed: Boolean) {
+    val onTap = actionRunCallback<MarkDoneAction>(actionParametersOf(ItemIdParam to row.id))
+    Box(
+        modifier = GlanceModifier
+            .height(32.dp)
+            .then(if (armed) GlanceModifier.padding(horizontal = 12.dp) else GlanceModifier.width(32.dp))
+            .background(if (armed) GlanceTheme.colors.primary else GlanceTheme.colors.primaryContainer)
+            .cornerRadius(16.dp)
+            .clickable(onTap),
+        contentAlignment = Alignment.Center
+    ) {
+        if (armed) {
+            Text(
+                text = "Done?",
+                style = TextStyle(color = GlanceTheme.colors.onPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            )
+        } else {
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_check),
+                contentDescription = "Mark ${row.title} done",
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
+                modifier = GlanceModifier.size(18.dp)
             )
         }
     }
