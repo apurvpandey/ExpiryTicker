@@ -14,3 +14,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin compiler session data and IDE project files
+.kotlin/
+/.idea/
