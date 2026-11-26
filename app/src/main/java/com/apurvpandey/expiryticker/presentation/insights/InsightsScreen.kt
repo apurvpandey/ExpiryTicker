@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.intl.Locale as ComposeLocale
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,7 +52,6 @@ import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import java.time.YearMonth
 import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun InsightsRoute(container: AppContainer, onNavigateBack: () -> Unit) {
@@ -169,6 +169,8 @@ private fun BigNumber(label: String, paise: Long, caption: String, modifier: Mod
 
 @Composable
 private fun UpcomingChart(insights: Insights) {
+    // Read through Compose so labels follow a language change instead of a stale default.
+    val locale = ComposeLocale.current.platformLocale
     val max = insights.upcoming.maxOf { it.paise }.coerceAtLeast(1L)
     val thisMonth = YearMonth.now()
     val total = insights.upcoming.sumOf { it.paise }
@@ -184,7 +186,7 @@ private fun UpcomingChart(insights: Insights) {
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .semantics { contentDescription = "${m.month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())}: ${CurrencyFormatter.format(m.paise)}" },
+                        .semantics { contentDescription = "${m.month.month.getDisplayName(TextStyle.FULL, locale)}: ${CurrencyFormatter.format(m.paise)}" },
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -200,7 +202,7 @@ private fun UpcomingChart(insights: Insights) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        m.month.month.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                        m.month.month.getDisplayName(TextStyle.NARROW, locale),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -210,7 +212,7 @@ private fun UpcomingChart(insights: Insights) {
         val busiest = insights.upcoming.maxByOrNull { it.paise }
         if (busiest != null && busiest.paise > 0) {
             Text(
-                "Busiest month: ${busiest.month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} " +
+                "Busiest month: ${busiest.month.month.getDisplayName(TextStyle.FULL, locale)} " +
                     "(${CurrencyFormatter.format(busiest.paise)})",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
