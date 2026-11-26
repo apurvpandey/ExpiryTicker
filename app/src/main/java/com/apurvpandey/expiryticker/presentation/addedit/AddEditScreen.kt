@@ -83,6 +83,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
+import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
 import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.icon
@@ -393,7 +394,7 @@ fun AddEditScreen(
                 OutlinedTextField(
                     value = uiState.amountText,
                     onValueChange = onAmountChange,
-                    label = { Text("Expected renewal cost (₹)") },
+                    label = { Text("Expected renewal cost (${CurrencyFormatter.symbol()})") },
                     placeholder = { Text("e.g. 5000") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Decimal,

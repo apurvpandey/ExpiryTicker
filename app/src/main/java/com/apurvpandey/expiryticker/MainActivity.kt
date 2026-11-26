@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.presentation.lock.LockScreen
 import com.apurvpandey.expiryticker.presentation.navigation.ExpiryTickerApp
 import com.apurvpandey.expiryticker.presentation.navigation.LaunchRequest
@@ -53,11 +54,17 @@ class MainActivity : FragmentActivity() {
                 .collectAsStateWithLifecycle(initialValue = null)
             val lockPref by container.appPreferences.appLockEnabled
                 .collectAsStateWithLifecycle(initialValue = null)
+            val currencyPref by container.appPreferences.currencyCode
+                .collectAsStateWithLifecycle(initialValue = null)
             val theme = savedTheme ?: AppTheme.SYSTEM
 
-            LaunchedEffect(savedTheme, lockPref) {
+            // Currency is applied before the first frame so amounts never flash in the wrong one.
+            LaunchedEffect(currencyPref) { currencyPref?.let(CurrencyFormatter::setCurrency) }
+
+            LaunchedEffect(savedTheme, lockPref, currencyPref) {
                 val pref = lockPref ?: return@LaunchedEffect
-                if (savedTheme == null) return@LaunchedEffect
+                if (savedTheme == null || currencyPref == null) return@LaunchedEffect
+                CurrencyFormatter.setCurrency(currencyPref!!)
                 lockEnabled = pref
                 if (coldStart) {
                     coldStart = false

@@ -26,7 +26,8 @@ data class SettingsUiState(
     val defaultReminderDays: Int = 7,
     val reminderHour: Int = 9,
     val appTheme: AppTheme = AppTheme.SYSTEM,
-    val appLockEnabled: Boolean = false
+    val appLockEnabled: Boolean = false,
+    val currencyCode: String = "INR"
 )
 
 class SettingsViewModel(
@@ -39,9 +40,13 @@ class SettingsViewModel(
         appPreferences.defaultReminderDays,
         appPreferences.reminderHour,
         appPreferences.appTheme,
-        appPreferences.appLockEnabled
-    ) { days, hour, theme, lock ->
-        SettingsUiState(defaultReminderDays = days, reminderHour = hour, appTheme = theme, appLockEnabled = lock)
+        appPreferences.appLockEnabled,
+        appPreferences.currencyCode
+    ) { days, hour, theme, lock, currency ->
+        SettingsUiState(
+            defaultReminderDays = days, reminderHour = hour, appTheme = theme,
+            appLockEnabled = lock, currencyCode = currency
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -57,6 +62,10 @@ class SettingsViewModel(
 
     fun setReminderHour(hour: Int) {
         viewModelScope.launch { appPreferences.setReminderHour(hour) }
+    }
+
+    fun setCurrency(code: String) {
+        viewModelScope.launch { appPreferences.setCurrencyCode(code) }
     }
 
     fun setAppLockEnabled(enabled: Boolean) {

@@ -11,7 +11,7 @@ data class ExpiryItem(
     val reminderDaysBefore: Int = 7,
     val recurrence: RecurrenceType = RecurrenceType.NONE,
     val notes: String = "",
-    // stored in paise (1 INR = 100 paise) to avoid floating-point issues; null if not set
+    // stored in hundredths of the currency's main unit ("paise") to avoid floating-point issues; null if not set
     val amountPaise: Long? = null,
     val isCompleted: Boolean = false,
     val createdAt: Instant = Instant.now(),

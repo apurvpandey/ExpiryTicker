@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.FileDownload
@@ -14,6 +15,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import com.apurvpandey.expiryticker.notification.ExpiryNotificationManager
 import com.apurvpandey.expiryticker.presentation.components.openNotificationSettings
+import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.security.AppLock
 import android.os.Build
 import android.provider.Settings as SystemSettings
@@ -126,6 +128,7 @@ fun SettingsRoute(
         },
         onRestoreDismissed = { pendingRestore = null },
         onThemeChange = viewModel::setAppTheme,
+        onCurrencyChange = viewModel::setCurrency,
         onAppLockChange = { enabled ->
             if (enabled && !AppLock.isAvailable(context)) {
                 viewModel.showMessage("Set up a screen lock, fingerprint or face on this device first")
@@ -152,11 +155,13 @@ fun SettingsScreen(
     pendingRestore: android.net.Uri? = null,
     onRestoreConfirmed: (android.net.Uri) -> Unit = {},
     onRestoreDismissed: () -> Unit = {},
-    onAppLockChange: (Boolean) -> Unit = {}
+    onAppLockChange: (Boolean) -> Unit = {},
+    onCurrencyChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var showReminderDialog by remember { mutableStateOf(false) }
     var showHourDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -268,6 +273,16 @@ fun SettingsScreen(
                 }
             }
 
+            SettingsGroup {
+                ListItem(
+                    headlineContent = { Text("Currency") },
+                    supportingContent = { Text("${uiState.currencyCode}. Existing amounts are not converted.") },
+                    leadingContent = { Icon(Icons.Default.Payments, contentDescription = null) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable { showCurrencyDialog = true }
+                )
+            }
+
             Spacer(Modifier.height(16.dp))
 
             // ─── Privacy ─────────────────────────────────────────────────
@@ -366,6 +381,35 @@ fun SettingsScreen(
                 ) { Text("Replace") }
             },
             dismissButton = { TextButton(onClick = onRestoreDismissed) { Text("Cancel") } }
+        )
+    }
+
+    if (showCurrencyDialog) {
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            title = { Text("Currency") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    CurrencyFormatter.supportedCodes.forEach { code ->
+                        val name = java.util.Currency.getInstance(code).displayName
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onCurrencyChange(code); showCurrencyDialog = false }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.currencyCode == code,
+                                onClick = { onCurrencyChange(code); showCurrencyDialog = false }
+                            )
+                            Text("$code  ·  $name", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel") } }
         )
     }
 

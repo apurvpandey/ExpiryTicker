@@ -342,7 +342,7 @@ private fun RenewDialog(
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { raw -> amount = raw.filter { it.isDigit() || it == '.' } },
-                    label = { Text("Amount paid (₹, optional)") },
+                    label = { Text("Amount paid (${CurrencyFormatter.symbol()}, optional)") },
                     isError = error != null,
                     supportingText = error?.let { { Text(it) } },
                     singleLine = true,

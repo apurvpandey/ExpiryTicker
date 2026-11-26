@@ -18,6 +18,7 @@ class AppPreferencesDataStore(private val context: Context) {
 
     private val defaultReminderDaysKey = intPreferencesKey("default_reminder_days")
     private val reminderHourKey = intPreferencesKey("reminder_hour")
+    private val currencyKey = stringPreferencesKey("currency_code")
     private val appLockKey = booleanPreferencesKey("app_lock_enabled")
     private val appThemeKey = stringPreferencesKey("app_theme")
 
@@ -31,6 +32,14 @@ class AppPreferencesDataStore(private val context: Context) {
 
     suspend fun setReminderHour(hour: Int) {
         context.dataStore.edit { prefs -> prefs[reminderHourKey] = hour.coerceIn(0, 23) }
+    }
+
+    val currencyCode: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[currencyKey] ?: "INR"
+    }
+
+    suspend fun setCurrencyCode(code: String) {
+        context.dataStore.edit { prefs -> prefs[currencyKey] = code }
     }
 
     val appLockEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->

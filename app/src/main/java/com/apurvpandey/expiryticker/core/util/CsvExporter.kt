@@ -6,7 +6,7 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 object CsvExporter {
     private val header = listOf(
         "Title", "Category", "Due date", "Status", "Reminder days before",
-        "Repeats", "Amount (INR)", "Notes"
+        "Repeats", "Amount", "Notes"
     )
 
     fun export(items: List<ExpiryItem>): String = buildString {
