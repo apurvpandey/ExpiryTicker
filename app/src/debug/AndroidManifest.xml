@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug-only test hook: adb shell am broadcast -a com.apurvpandey.expiryticker.SEED -->
+        <receiver
+            android:name=".DebugSeedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.apurvpandey.expiryticker.SEED" />
+                <action android:name="com.apurvpandey.expiryticker.CLEAR" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -30,7 +30,8 @@ fun SummaryCard(
     icon: ImageVector,
     containerColor: Color,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     val animatedCount by animateIntAsState(
         targetValue = count,
@@ -38,12 +39,9 @@ fun SummaryCard(
         label = "summary_count"
     )
 
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
+    val colors = CardDefaults.cardColors(containerColor = containerColor)
+    val elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    val content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -73,5 +71,23 @@ fun SummaryCard(
                 color = contentColor.copy(alpha = 0.75f)
             )
         }
+    }
+    if (onClick != null) {
+        Card(
+            onClick = onClick,
+            modifier = modifier,
+            colors = colors,
+            shape = MaterialTheme.shapes.large,
+            elevation = elevation,
+            content = content
+        )
+    } else {
+        Card(
+            modifier = modifier,
+            colors = colors,
+            shape = MaterialTheme.shapes.large,
+            elevation = elevation,
+            content = content
+        )
     }
 }

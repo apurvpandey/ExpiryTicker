@@ -268,6 +268,7 @@ private fun DetailContent(
             DetailRow(
                 label = "Reminder",
                 value = if (item.reminderDaysBefore == 0) "On due date"
+                        else if (item.reminderDaysBefore == 1) "1 day before"
                         else "${item.reminderDaysBefore} days before"
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))

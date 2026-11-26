@@ -1,6 +1,15 @@
 package com.apurvpandey.expiryticker.presentation.settings
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import com.apurvpandey.expiryticker.notification.ExpiryNotificationManager
 import android.os.Build
 import android.provider.Settings as SystemSettings
 import androidx.compose.foundation.clickable
@@ -73,14 +82,28 @@ fun SettingsRoute(
     onNavigateBack: () -> Unit
 ) {
     val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.factory(container.appPreferences)
+        factory = SettingsViewModel.factory(container.appPreferences, container.expiryItemRepository)
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri -> uri?.let { viewModel.exportTo(context.contentResolver, it) } }
+
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+    }
+
     SettingsScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
         onDefaultReminderChange = viewModel::setDefaultReminderDays,
+        onReminderHourChange = viewModel::setReminderHour,
+        onSendTestNotification = { ExpiryNotificationManager.showTest(context) },
+        onExport = { exportLauncher.launch("expiryticker-export.csv") },
         onThemeChange = viewModel::setAppTheme
     )
 }
@@ -91,12 +114,18 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     onNavigateBack: () -> Unit,
     onDefaultReminderChange: (Int) -> Unit,
-    onThemeChange: (AppTheme) -> Unit
+    onThemeChange: (AppTheme) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onReminderHourChange: (Int) -> Unit = {},
+    onSendTestNotification: () -> Unit = {},
+    onExport: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showReminderDialog by remember { mutableStateOf(false) }
+    var showHourDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -135,6 +164,17 @@ fun SettingsScreen(
                     modifier = Modifier.clickable { showReminderDialog = true }
                 )
 
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ListItem(
+                    headlineContent = { Text("Reminder time") },
+                    supportingContent = { Text(formatHour(uiState.reminderHour)) },
+                    leadingContent = {
+                        Icon(Icons.Default.AccessTime, contentDescription = null)
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable { showHourDialog = true }
+                )
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
@@ -151,6 +191,17 @@ fun SettingsScreen(
                         }
                     )
                 }
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ListItem(
+                    headlineContent = { Text("Send test notification") },
+                    supportingContent = { Text("Check that reminders reach you") },
+                    leadingContent = {
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null)
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable(onClick = onSendTestNotification)
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -189,6 +240,24 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // ─── Data ────────────────────────────────────────────────────
+            SectionLabel("Data")
+            Spacer(Modifier.height(4.dp))
+
+            SettingsGroup {
+                ListItem(
+                    headlineContent = { Text("Export to CSV") },
+                    supportingContent = { Text("Save all items as a spreadsheet file") },
+                    leadingContent = {
+                        Icon(Icons.Default.FileDownload, contentDescription = null)
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable(onClick = onExport)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
             // ─── About ───────────────────────────────────────────────────
             SectionLabel("About")
             Spacer(Modifier.height(4.dp))
@@ -206,6 +275,46 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    if (showHourDialog) {
+        AlertDialog(
+            onDismissRequest = { showHourDialog = false },
+            title = { Text("Reminder time") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    (6..22).forEach { hour ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onReminderHourChange(hour)
+                                    showHourDialog = false
+                                }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.reminderHour == hour,
+                                onClick = {
+                                    onReminderHourChange(hour)
+                                    showHourDialog = false
+                                }
+                            )
+                            Text(
+                                text = formatHour(hour),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showHourDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showReminderDialog) {
@@ -249,6 +358,9 @@ fun SettingsScreen(
     }
 }
 
+private fun formatHour(hour: Int): String =
+    java.time.LocalTime.of(hour, 0).format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+
 @Composable
 private fun SettingsGroup(content: @Composable () -> Unit) {
     Surface(
@@ -256,7 +368,8 @@ private fun SettingsGroup(content: @Composable () -> Unit) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = MaterialTheme.shapes.large
     ) {
-        content()
+        // Rows must be stacked vertically; a bare Surface would draw them on top of each other.
+        Column { content() }
     }
 }
 

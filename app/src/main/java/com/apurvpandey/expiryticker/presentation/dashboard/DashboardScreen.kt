@@ -9,7 +9,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,48 +29,73 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.Image
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.apurvpandey.expiryticker.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
+import com.apurvpandey.expiryticker.core.util.DueBucket
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
@@ -75,6 +103,7 @@ import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
 import com.apurvpandey.expiryticker.presentation.components.SummaryCard
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -86,18 +115,43 @@ fun DashboardRoute(
     onNavigateToSettings: () -> Unit
 ) {
     val viewModel: DashboardViewModel = viewModel(
-        factory = DashboardViewModel.factory(container.expiryItemRepository)
+        factory = DashboardViewModel.factory(container.expiryItemRepository, container.itemActions)
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            // A new event replaces the previous snackbar instead of queueing behind it.
+            snackbarHostState.currentSnackbarData?.dismiss()
+            launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = event.message,
+                    actionLabel = event.undoItem?.let { "Undo" },
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Long
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    event.undoItem?.let(viewModel::undo)
+                }
+            }
+        }
+    }
 
     DashboardScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onNavigateToAdd = onNavigateToAdd,
         onNavigateToDetail = onNavigateToDetail,
         onNavigateToSettings = onNavigateToSettings,
         onFilterSelected = viewModel::setFilter,
+        onSortSelected = viewModel::setSort,
+        onCategorySelected = viewModel::setCategory,
         onSearchQueryChanged = viewModel::setSearchQuery,
-        onToggleSearch = viewModel::toggleSearch
+        onToggleSearch = viewModel::toggleSearch,
+        onClearRefinements = viewModel::clearRefinements,
+        onMarkDone = viewModel::markDone,
+        onDelete = viewModel::delete
     )
 }
 
@@ -105,12 +159,18 @@ fun DashboardRoute(
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onNavigateToAdd: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
     onFilterSelected: (DashboardFilter) -> Unit,
+    onSortSelected: (DashboardSort) -> Unit = {},
+    onCategorySelected: (RenewalCategory?) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit,
-    onToggleSearch: () -> Unit
+    onToggleSearch: () -> Unit,
+    onClearRefinements: () -> Unit = {},
+    onMarkDone: (ExpiryItem) -> Unit = {},
+    onDelete: (ExpiryItem) -> Unit = {}
 ) {
     val todayLabel = remember {
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
@@ -119,8 +179,15 @@ fun DashboardScreen(
     val isFabExpanded by remember {
         derivedStateOf { !listState.isScrollInProgress && listState.firstVisibleItemIndex < 2 }
     }
+    val searchFocus = remember { FocusRequester() }
+    var sortMenuOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.isSearchActive) {
+        if (uiState.isSearchActive) searchFocus.requestFocus()
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 TopAppBar(
@@ -145,6 +212,30 @@ fun DashboardScreen(
                                 contentDescription = if (uiState.isSearchActive) "Close search" else "Search"
                             )
                         }
+                        Box {
+                            IconButton(onClick = { sortMenuOpen = true }) {
+                                Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = "Sort")
+                            }
+                            DropdownMenu(
+                                expanded = sortMenuOpen,
+                                onDismissRequest = { sortMenuOpen = false }
+                            ) {
+                                DashboardSort.entries.forEach { sort ->
+                                    DropdownMenuItem(
+                                        text = { Text(sort.label) },
+                                        leadingIcon = {
+                                            if (sort == uiState.sort) {
+                                                Icon(Icons.Default.Check, contentDescription = "Selected")
+                                            }
+                                        },
+                                        onClick = {
+                                            sortMenuOpen = false
+                                            onSortSelected(sort)
+                                        }
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
@@ -161,14 +252,14 @@ fun DashboardScreen(
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = onSearchQueryChanged,
-                        placeholder = { Text("Search items…") },
+                        placeholder = { Text("Search title, notes or category") },
                         leadingIcon = {
                             Icon(Icons.Default.Search, contentDescription = null)
                         },
                         trailingIcon = {
                             if (uiState.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { onSearchQueryChanged("") }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                    Icon(Icons.Default.Close, contentDescription = "Clear search text")
                                 }
                             }
                         },
@@ -177,6 +268,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .focusRequester(searchFocus)
                     )
                 }
             }
@@ -209,6 +301,7 @@ fun DashboardScreen(
                         icon = Icons.Outlined.Warning,
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        onClick = { onFilterSelected(DashboardFilter.OVERDUE) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
@@ -217,6 +310,7 @@ fun DashboardScreen(
                         icon = Icons.Outlined.Schedule,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
@@ -225,7 +319,19 @@ fun DashboardScreen(
                         icon = Icons.Outlined.CalendarMonth,
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
                         modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (uiState.next30DaysAmountPaise > 0) {
+                item {
+                    Text(
+                        text = "${CurrencyFormatter.format(uiState.next30DaysAmountPaise)} to pay in the next 30 days",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
             }
@@ -249,30 +355,171 @@ fun DashboardScreen(
                 }
             }
 
-            // Animated empty ↔ populated transition
-            if (!uiState.isLoading && uiState.displayItems.isEmpty()) {
+            if (uiState.availableCategories.size > 1) {
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(uiState.availableCategories) { category ->
+                            val selected = uiState.categoryFilter == category
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onCategorySelected(if (selected) null else category) },
+                                label = { Text(category.displayName) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!uiState.isLoading && uiState.sections.isEmpty()) {
                 item(key = "empty_state") {
-                    AnimatedContent(
-                        targetState = uiState.currentFilter,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "empty_content"
-                    ) { filter ->
-                        EmptyState(filter = filter, onAddItem = onNavigateToAdd)
+                    if (uiState.hasActiveRefinement) {
+                        NoMatchesState(onClear = onClearRefinements)
+                    } else {
+                        AnimatedContent(
+                            targetState = uiState.currentFilter,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            label = "empty_content"
+                        ) { filter ->
+                            EmptyState(filter = filter, onAddItem = onNavigateToAdd)
+                        }
                     }
                 }
             } else {
-                items(uiState.displayItems, key = { it.item.id }) { ws ->
-                    ExpiryItemCard(
-                        item = ws.item,
-                        status = ws.status,
-                        onClick = { onNavigateToDetail(ws.item.id) },
-                        modifier = Modifier.animateItem()
-                    )
+                uiState.sections.forEach { section ->
+                    section.bucket?.let { bucket ->
+                        item(key = "header_${bucket.name}") {
+                            SectionHeader(
+                                bucket = bucket,
+                                count = section.items.size,
+                                modifier = Modifier.animateItem()
+                            )
+                        }
+                    }
+                    items(section.items, key = { it.item.id }) { ws ->
+                        SwipeableItemCard(
+                            ws = ws,
+                            canComplete = !ws.item.isCompleted,
+                            onClick = { onNavigateToDetail(ws.item.id) },
+                            onMarkDone = { onMarkDone(ws.item) },
+                            onDelete = { onDelete(ws.item) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
                 }
             }
 
             item { Spacer(Modifier.height(80.dp)) }
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(bucket: DueBucket, count: Int, modifier: Modifier = Modifier) {
+    val color = if (bucket == DueBucket.OVERDUE) MaterialTheme.colorScheme.error
+    else MaterialTheme.colorScheme.onSurfaceVariant
+    Text(
+        text = "${bucket.label}  ·  $count",
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, top = 8.dp)
+            .semantics { contentDescription = "${bucket.label}, $count items" }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableItemCard(
+    ws: ExpiryItemWithStatus,
+    canComplete: Boolean,
+    onClick: () -> Unit,
+    onMarkDone: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptics = LocalHapticFeedback.current
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> if (canComplete) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onMarkDone()
+                    // Recurring items stay in the list with a new date, so snap back.
+                    ws.item.recurrence == RecurrenceType.NONE
+                } else false
+                SwipeToDismissBoxValue.EndToStart -> {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDelete()
+                    true
+                }
+                SwipeToDismissBoxValue.Settled -> false
+            }
+        }
+    )
+    // The swipe state is saved per item; a restored (undone) item must not come back dismissed.
+    LaunchedEffect(Unit) {
+        if (state.currentValue != SwipeToDismissBoxValue.Settled) {
+            state.snapTo(SwipeToDismissBoxValue.Settled)
+        }
+    }
+    SwipeToDismissBox(
+        state = state,
+        modifier = modifier,
+        enableDismissFromStartToEnd = canComplete,
+        backgroundContent = {
+            val toEnd = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+            val bg = when (state.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.surface
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(bg, MaterialTheme.shapes.large)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = if (toEnd) Alignment.CenterStart else Alignment.CenterEnd
+            ) {
+                if (state.dismissDirection != SwipeToDismissBoxValue.Settled) {
+                    Icon(
+                        imageVector = if (toEnd) Icons.Default.Check else Icons.Default.Delete,
+                        contentDescription = if (toEnd) "Mark done" else "Delete",
+                        tint = if (toEnd) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+    ) {
+        ExpiryItemCard(item = ws.item, status = ws.status, onClick = onClick)
+    }
+}
+
+@Composable
+private fun NoMatchesState(onClear: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 48.dp, horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            Icons.Outlined.SearchOff,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text("No matches", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Nothing fits your search or category.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        OutlinedButton(onClick = onClear) { Text("Clear search and category") }
     }
 }
 
@@ -403,45 +650,57 @@ private fun EmptyStateContent(
 
 // ─── Previews ───────────────────────────────────────────────────────────────
 
-private val previewToday: LocalDate = LocalDate.of(2026, 8, 19)
+// ─── Previews ───────────────────────────────────────────────────────────────
+
+private val previewToday: LocalDate = LocalDate.now()
 
 private val previewItems = listOf(
     ExpiryItemWithStatus(
-        item = ExpiryItem(
+        ExpiryItem(
             id = 1L, title = "Car Insurance", category = RenewalCategory.INSURANCE,
             dueDate = previewToday.plusDays(5), recurrence = RecurrenceType.YEARLY
         ),
-        status = ExpiryStatus.Active(5)
+        ExpiryStatus.Active(5)
     ),
     ExpiryItemWithStatus(
-        item = ExpiryItem(
-            id = 2L, title = "Domain Registration", category = RenewalCategory.DOMAIN,
+        ExpiryItem(
+            id = 2L, title = "Passport", category = RenewalCategory.TRAVEL,
             dueDate = previewToday.minusDays(2), amountPaise = 150000
         ),
-        status = ExpiryStatus.Overdue(2)
+        ExpiryStatus.Overdue(2)
     ),
     ExpiryItemWithStatus(
-        item = ExpiryItem(
+        ExpiryItem(
             id = 3L, title = "Netflix", category = RenewalCategory.SUBSCRIPTION,
             dueDate = previewToday.plusDays(22), recurrence = RecurrenceType.MONTHLY,
             amountPaise = 64900
         ),
-        status = ExpiryStatus.Active(22)
+        ExpiryStatus.Active(22)
     ),
 )
 
-@Preview(showBackground = true, name = "Dashboard – Normal")
+private fun previewState() = DashboardUiState(
+    isLoading = false,
+    overdueCount = 1,
+    next7DaysCount = 1,
+    next30DaysCount = 2,
+    next30DaysAmountPaise = 64900,
+    totalActiveCount = 3,
+    sections = listOf(
+        DashboardSection(DueBucket.OVERDUE, listOf(previewItems[1])),
+        DashboardSection(DueBucket.THIS_WEEK, listOf(previewItems[0])),
+        DashboardSection(DueBucket.THIS_MONTH, listOf(previewItems[2]))
+    ),
+    resultCount = 3,
+    availableCategories = listOf(RenewalCategory.INSURANCE, RenewalCategory.TRAVEL, RenewalCategory.SUBSCRIPTION)
+)
+
+@Preview(showBackground = true, name = "Dashboard - Normal")
 @Composable
 private fun DashboardPreviewNormal() {
     ExpiryTickerTheme {
         DashboardScreen(
-            uiState = DashboardUiState(
-                isLoading = false,
-                overdueCount = 1,
-                next7DaysCount = 2,
-                next30DaysCount = 3,
-                displayItems = previewItems
-            ),
+            uiState = previewState(),
             onNavigateToAdd = {}, onNavigateToDetail = {},
             onNavigateToSettings = {}, onFilterSelected = {},
             onSearchQueryChanged = {}, onToggleSearch = {}
@@ -449,7 +708,7 @@ private fun DashboardPreviewNormal() {
     }
 }
 
-@Preview(showBackground = true, name = "Dashboard – Empty")
+@Preview(showBackground = true, name = "Dashboard - Empty")
 @Composable
 private fun DashboardPreviewEmpty() {
     ExpiryTickerTheme {
@@ -463,20 +722,14 @@ private fun DashboardPreviewEmpty() {
 }
 
 @Preview(
-    showBackground = true, name = "Dashboard – Dark",
+    showBackground = true, name = "Dashboard - Dark",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun DashboardPreviewDark() {
     ExpiryTickerTheme {
         DashboardScreen(
-            uiState = DashboardUiState(
-                isLoading = false,
-                overdueCount = 2,
-                next7DaysCount = 1,
-                next30DaysCount = 4,
-                displayItems = previewItems
-            ),
+            uiState = previewState(),
             onNavigateToAdd = {}, onNavigateToDetail = {},
             onNavigateToSettings = {}, onFilterSelected = {},
             onSearchQueryChanged = {}, onToggleSearch = {}

@@ -16,10 +16,19 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class AppPreferencesDataStore(private val context: Context) {
 
     private val defaultReminderDaysKey = intPreferencesKey("default_reminder_days")
+    private val reminderHourKey = intPreferencesKey("reminder_hour")
     private val appThemeKey = stringPreferencesKey("app_theme")
 
     val defaultReminderDays: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[defaultReminderDaysKey] ?: 7
+    }
+
+    val reminderHour: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[reminderHourKey] ?: 9
+    }
+
+    suspend fun setReminderHour(hour: Int) {
+        context.dataStore.edit { prefs -> prefs[reminderHourKey] = hour.coerceIn(0, 23) }
     }
 
     val appTheme: Flow<AppTheme> = context.dataStore.data.map { prefs ->
