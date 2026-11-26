@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.addedit
 
+import com.apurvpandey.expiryticker.presentation.common.labelSpacing
 import com.apurvpandey.expiryticker.presentation.common.asString
 import androidx.compose.ui.res.stringResource
 import com.apurvpandey.expiryticker.R
@@ -554,7 +555,7 @@ private fun SectionLabel(text: String, isError: Boolean = false) {
         color = if (isError) MaterialTheme.colorScheme.error
                 else MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.8.sp
+        letterSpacing = labelSpacing(0.8.sp)
     )
 }
 

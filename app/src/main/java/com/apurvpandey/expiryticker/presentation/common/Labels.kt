@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import com.apurvpandey.expiryticker.R
 import com.apurvpandey.expiryticker.data.backup.BackupError
 import com.apurvpandey.expiryticker.core.util.DueBucket
@@ -104,3 +105,11 @@ fun BackupError.messageRes(): Int = when (this) {
     BackupError.TOO_LARGE -> R.string.backup_err_too_large
     BackupError.MISSING_DATA -> R.string.backup_err_missing_data
 }
+
+// Scripts whose letters join up; extra spacing between letters breaks the joins.
+private val joinedScripts = setOf("hi", "mr", "ne", "bn", "gu", "pa", "ta", "te", "kn", "ml", "ar", "fa", "ur", "th")
+
+/** Letter spacing for small caps-style labels: applied for Latin text, dropped for joined scripts. */
+@Composable
+fun labelSpacing(base: androidx.compose.ui.unit.TextUnit = 1.sp): androidx.compose.ui.unit.TextUnit =
+    if (androidx.compose.ui.text.intl.Locale.current.language in joinedScripts) 0.sp else base

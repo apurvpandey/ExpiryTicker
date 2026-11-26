@@ -35,7 +35,8 @@ import com.apurvpandey.expiryticker.presentation.common.label
 import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 import java.time.format.DateTimeFormatter
 
-private val itemDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+// Built per use, not cached: a cached formatter would keep the language it was created in.
+private val itemDateFormatter: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM yyyy")
 
 @Composable
 fun ExpiryItemCard(

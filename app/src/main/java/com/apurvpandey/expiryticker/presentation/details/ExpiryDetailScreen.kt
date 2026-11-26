@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import com.apurvpandey.expiryticker.presentation.common.labelSpacing
 import com.apurvpandey.expiryticker.presentation.common.asString
 import com.apurvpandey.expiryticker.presentation.common.UiText
 import androidx.compose.ui.res.stringResource
@@ -110,7 +111,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val shortDate = DateTimeFormatter.ofPattern("d MMM yyyy")
+// Built per use, not cached: a cached formatter would keep the language it was created in.
+private val shortDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM yyyy")
 
 @Composable
 fun ExpiryDetailRoute(
@@ -642,7 +644,7 @@ private fun CardLabel(text: String) {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold,
-        letterSpacing = 1.sp
+        letterSpacing = labelSpacing(1.sp)
     )
 }
 

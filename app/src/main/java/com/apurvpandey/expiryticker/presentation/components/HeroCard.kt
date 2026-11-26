@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import com.apurvpandey.expiryticker.presentation.common.labelSpacing
 import androidx.compose.ui.res.stringResource
 import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.background
@@ -64,7 +65,7 @@ fun NextUpHero(
                 text = stringResource(R.string.next_up),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.78f),
-                letterSpacing = 1.2.sp
+                letterSpacing = labelSpacing(1.2.sp)
             )
             Text(
                 text = headline,

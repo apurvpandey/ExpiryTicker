@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.insights
 
+import com.apurvpandey.expiryticker.presentation.common.labelSpacing
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.apurvpandey.expiryticker.R
@@ -147,7 +148,7 @@ private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Un
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.sp
+                letterSpacing = labelSpacing(1.sp)
             )
             content()
         }
