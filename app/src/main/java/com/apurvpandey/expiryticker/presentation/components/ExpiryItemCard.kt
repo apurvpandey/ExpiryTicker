@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
+import com.apurvpandey.expiryticker.presentation.common.label
 import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 import java.time.format.DateTimeFormatter
 
@@ -43,12 +46,13 @@ fun ExpiryItemCard(
 ) {
     val urgency = status.urgencyColors()
     val countdown = status.countdown()
+    val categoryLabel = item.category.label()
     val subtitle = buildString {
         append(item.dueDate.format(itemDateFormatter))
         append("  ·  ")
-        append(item.amountPaise?.let { CurrencyFormatter.format(it) } ?: item.category.displayName)
+        append(item.amountPaise?.let { CurrencyFormatter.format(it) } ?: categoryLabel)
     }
-    val a11y = "${item.title}, ${countdown.value} ${countdown.caption}, $subtitle"
+    val a11y = stringResource(R.string.item_a11y, item.title, countdown.value, countdown.caption, subtitle)
 
     Card(
         onClick = onClick,

@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.settings
 
+import com.apurvpandey.expiryticker.presentation.common.messageRes
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.presentation.common.UiText
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -53,8 +56,8 @@ class SettingsViewModel(
         initialValue = SettingsUiState()
     )
 
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 2)
-    val messages: SharedFlow<String> = _messages.asSharedFlow()
+    private val _messages = MutableSharedFlow<UiText>(extraBufferCapacity = 2)
+    val messages: SharedFlow<UiText> = _messages.asSharedFlow()
 
     fun setDefaultReminderDays(days: Int) {
         viewModelScope.launch { appPreferences.setDefaultReminderDays(days) }
@@ -72,7 +75,7 @@ class SettingsViewModel(
         viewModelScope.launch { appPreferences.setAppLockEnabled(enabled) }
     }
 
-    fun showMessage(message: String) {
+    fun showMessage(message: UiText) {
         _messages.tryEmit(message)
     }
 
@@ -92,8 +95,8 @@ class SettingsViewModel(
             }
             _messages.emit(
                 result.fold(
-                    onSuccess = { "Exported $it items" },
-                    onFailure = { "Export failed" }
+                    onSuccess = { UiText.Plural(R.plurals.msg_exported, it, listOf(it)) },
+                    onFailure = { UiText.of(R.string.err_export_failed) }
                 )
             )
         }
@@ -109,8 +112,8 @@ class SettingsViewModel(
             }
             _messages.emit(
                 result.fold(
-                    onSuccess = { "Backed up $it items" },
-                    onFailure = { "Backup failed" }
+                    onSuccess = { UiText.Plural(R.plurals.msg_backed_up, it, listOf(it)) },
+                    onFailure = { UiText.of(R.string.err_backup_failed) }
                 )
             )
         }
@@ -127,10 +130,16 @@ class SettingsViewModel(
             _messages.emit(
                 result.fold(
                     onSuccess = {
-                        val skipped = if (it.skippedAttachments > 0) " (${it.skippedAttachments} attachments missing)" else ""
-                        "Restored ${it.items} items$skipped"
+                        if (it.skippedAttachments > 0) {
+                            UiText.of(R.string.msg_restored_missing, it.items, it.skippedAttachments)
+                        } else {
+                            UiText.Plural(R.plurals.msg_restored, it.items, listOf(it.items))
+                        }
                     },
-                    onFailure = { e -> if (e is BackupFormatException) e.message.orEmpty() else "Restore failed" }
+                    onFailure = { e ->
+                        if (e is BackupFormatException) UiText.of(e.error.messageRes())
+                        else UiText.of(R.string.err_restore_failed)
+                    }
                 )
             )
         }

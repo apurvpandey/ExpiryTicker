@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.lock
 
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -37,16 +39,16 @@ fun LockScreen(onUnlock: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(16.dp))
-            Text("ExpiryTicker is locked", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.expiryticker_is_locked), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             Text(
-                "Unlock with your fingerprint, face or screen lock to see your items.",
+                stringResource(R.string.unlock_with_your_fingerprint_face_or),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(24.dp))
-            Button(onClick = onUnlock) { Text("Unlock") }
+            Button(onClick = onUnlock) { Text(stringResource(R.string.unlock)) }
         }
     }
 }

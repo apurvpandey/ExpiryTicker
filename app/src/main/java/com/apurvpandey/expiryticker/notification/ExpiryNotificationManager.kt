@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.notification
 
+import com.apurvpandey.expiryticker.presentation.common.labelRes
+import com.apurvpandey.expiryticker.domain.model.RecurrenceType
+import android.content.res.Resources
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -15,35 +18,47 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 object ExpiryNotificationManager {
 
     const val CHANNEL_ID = "expiry_reminders"
-    private const val CHANNEL_NAME = "Expiry reminders"
-    private const val CHANNEL_DESCRIPTION = "Reminders for upcoming expiries and renewals"
     private const val TEST_NOTIFICATION_ID = 0
 
     fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                context.getString(R.string.notif_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = CHANNEL_DESCRIPTION }
+            ).apply { description = context.getString(R.string.notif_channel_desc) }
             context.getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
         }
     }
 
-    fun bodyFor(daysUntilDue: Int, renews: Boolean): String {
-        val verb = if (renews) "Renews" else "Expires"
-        return when {
-            daysUntilDue < -1 -> "Overdue by ${-daysUntilDue} days."
-            daysUntilDue == -1 -> "Overdue since yesterday."
-            daysUntilDue == 0 -> "$verb today."
-            daysUntilDue == 1 -> "$verb tomorrow."
-            else -> "$verb in $daysUntilDue days."
-        }
+    /** What a reminder says about timing, independent of language so it can be unit tested. */
+    data class DayPhrase(val kind: Kind, val days: Int, val renews: Boolean) {
+        enum class Kind { OVERDUE_DAYS, OVERDUE_YESTERDAY, TODAY, TOMORROW, IN_DAYS }
+    }
+
+    fun phraseFor(daysUntilDue: Int, renews: Boolean): DayPhrase = when {
+        daysUntilDue < -1 -> DayPhrase(DayPhrase.Kind.OVERDUE_DAYS, -daysUntilDue, renews)
+        daysUntilDue == -1 -> DayPhrase(DayPhrase.Kind.OVERDUE_YESTERDAY, 1, renews)
+        daysUntilDue == 0 -> DayPhrase(DayPhrase.Kind.TODAY, 0, renews)
+        daysUntilDue == 1 -> DayPhrase(DayPhrase.Kind.TOMORROW, 1, renews)
+        else -> DayPhrase(DayPhrase.Kind.IN_DAYS, daysUntilDue, renews)
+    }
+
+    fun DayPhrase.format(res: Resources): String = when (kind) {
+        DayPhrase.Kind.OVERDUE_DAYS -> res.getQuantityString(R.plurals.notif_overdue_days, days, days)
+        DayPhrase.Kind.OVERDUE_YESTERDAY -> res.getString(R.string.notif_overdue_yesterday)
+        DayPhrase.Kind.TODAY ->
+            res.getString(if (renews) R.string.notif_today_renews else R.string.notif_today_expires)
+        DayPhrase.Kind.TOMORROW ->
+            res.getString(if (renews) R.string.notif_tomorrow_renews else R.string.notif_tomorrow_expires)
+        DayPhrase.Kind.IN_DAYS -> res.getQuantityString(
+            if (renews) R.plurals.notif_in_days_renews else R.plurals.notif_in_days_expires, days, days
+        )
     }
 
     fun showReminder(context: Context, item: ExpiryItem, daysUntilDue: Int) {
-        val body = bodyFor(daysUntilDue, renews = item.recurrence.name != "NONE")
+        val body = phraseFor(daysUntilDue, renews = item.recurrence != RecurrenceType.NONE).format(context.resources)
         val itemId = item.id
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
@@ -59,14 +74,14 @@ object ExpiryNotificationManager {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(item.title)
             .setContentText(body)
-            .setSubText(item.category.displayName)
+            .setSubText(context.getString(item.category.labelRes()))
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .addAction(0, "Mark done", actionIntent(context, itemId, NotificationActionReceiver.ACTION_DONE))
-            .addAction(0, "Remind tomorrow", actionIntent(context, itemId, NotificationActionReceiver.ACTION_SNOOZE))
+            .addAction(0, context.getString(R.string.notif_action_done), actionIntent(context, itemId, NotificationActionReceiver.ACTION_DONE))
+            .addAction(0, context.getString(R.string.notif_action_snooze), actionIntent(context, itemId, NotificationActionReceiver.ACTION_SNOOZE))
             .build()
 
         post(context, itemId.toInt(), notification)
@@ -76,8 +91,8 @@ object ExpiryNotificationManager {
     fun showTest(context: Context) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Reminders are working")
-            .setContentText("You will get notifications like this before items expire.")
+            .setContentTitle(context.getString(R.string.notif_test_title))
+            .setContentText(context.getString(R.string.notif_test_text))
             .setAutoCancel(true)
             .build()
         post(context, TEST_NOTIFICATION_ID, notification)

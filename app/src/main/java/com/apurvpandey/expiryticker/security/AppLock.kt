@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.security
 
+import com.apurvpandey.expiryticker.R
 import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -22,8 +23,8 @@ object AppLock {
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) = onFailure()
         }
         val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock ExpiryTicker")
-            .setSubtitle("Your reminders are protected")
+            .setTitle(activity.getString(R.string.lock_prompt_title))
+            .setSubtitle(activity.getString(R.string.lock_prompt_subtitle))
             .setAllowedAuthenticators(AUTHENTICATORS)
             .build()
         BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), callback).authenticate(info)

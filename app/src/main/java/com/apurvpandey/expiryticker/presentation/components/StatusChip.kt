@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,20 +46,13 @@ fun StatusChip(status: ExpiryStatus, modifier: Modifier = Modifier) {
                 modifier = Modifier.size(12.dp)
             )
             Text(
-                text = status.toShortText(),
+                text = status.shortLabel(LocalContext.current.resources),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor,
                 fontWeight = FontWeight.SemiBold
             )
         }
     }
-}
-
-private fun ExpiryStatus.toShortText(): String = when (this) {
-    is ExpiryStatus.Completed -> "Done"
-    is ExpiryStatus.DueToday -> "Due today"
-    is ExpiryStatus.Overdue -> if (daysOverdue == 1) "1d overdue" else "${daysOverdue}d overdue"
-    is ExpiryStatus.Active -> "${daysRemaining}d left"
 }
 
 private fun statusIcon(status: ExpiryStatus): ImageVector = when (status) {

@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -71,15 +73,15 @@ fun NotificationsOffBanner(modifier: Modifier = Modifier) {
     ) {
         Icon(Icons.Outlined.NotificationsOff, contentDescription = null, tint = colors.onContainer, modifier = Modifier.size(24.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Reminders are off", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = colors.onContainer)
+            Text(stringResource(R.string.reminders_are_off), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = colors.onContainer)
             Text(
-                "Notifications are blocked, so you won't hear about expiries.",
+                stringResource(R.string.notifications_are_blocked_so_you_won),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onContainer
             )
         }
         TextButton(onClick = { openNotificationSettings(context) }) {
-            Text("Turn on", color = colors.onContainer, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.turn_on), color = colors.onContainer, fontWeight = FontWeight.Bold)
         }
     }
 }

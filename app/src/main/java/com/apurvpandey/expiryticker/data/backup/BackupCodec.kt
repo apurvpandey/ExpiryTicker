@@ -18,7 +18,17 @@ data class BackupData(
     val attachments: List<Attachment>
 )
 
-class BackupFormatException(message: String, cause: Throwable? = null) : Exception(message, cause)
+/** Why a backup was refused; the UI maps each reason to a message in the user's language. */
+enum class BackupError {
+    NOT_A_BACKUP, UNREADABLE_VERSION, NEWER_VERSION, DUPLICATE_ITEMS, DAMAGED, INVALID_DATE,
+    ITEM_WITHOUT_TITLE, TOO_LARGE, MISSING_DATA
+}
+
+class BackupFormatException(
+    val error: BackupError,
+    message: String,
+    cause: Throwable? = null
+) : Exception(message, cause)
 
 /** Turns the app's data into a versioned JSON document and back, validating what it reads. */
 object BackupCodec {
@@ -40,14 +50,14 @@ object BackupCodec {
     fun decode(json: String): BackupData {
         try {
             val root = JSONObject(json)
-            if (root.optString("format") != FORMAT) throw BackupFormatException("This is not an ExpiryTicker backup")
+            if (root.optString("format") != FORMAT) throw BackupFormatException(BackupError.NOT_A_BACKUP, "This is not an ExpiryTicker backup")
             val version = root.optInt("version", -1)
-            if (version < 1) throw BackupFormatException("Unreadable backup version")
-            if (version > VERSION) throw BackupFormatException("This backup was made by a newer version of the app")
+            if (version < 1) throw BackupFormatException(BackupError.UNREADABLE_VERSION, "Unreadable backup version")
+            if (version > VERSION) throw BackupFormatException(BackupError.NEWER_VERSION, "This backup was made by a newer version of the app")
 
             val items = root.getJSONArray("items").objects().map(::itemFrom)
             val ids = items.map { it.id }.toSet()
-            if (ids.size != items.size) throw BackupFormatException("The backup contains duplicate items")
+            if (ids.size != items.size) throw BackupFormatException(BackupError.DUPLICATE_ITEMS, "The backup contains duplicate items")
             // Anything pointing at a missing item is dropped rather than failing the whole restore.
             val history = root.optJSONArray("history")?.objects()?.map(::historyFrom).orEmpty().filter { it.itemId in ids }
             val attachments = root.optJSONArray("attachments")?.objects()?.map(::attachmentFrom).orEmpty()
@@ -56,9 +66,9 @@ object BackupCodec {
         } catch (e: BackupFormatException) {
             throw e
         } catch (e: JSONException) {
-            throw BackupFormatException("The backup file is damaged", e)
+            throw BackupFormatException(BackupError.DAMAGED, "The backup file is damaged", e)
         } catch (e: DateTimeParseException) {
-            throw BackupFormatException("The backup contains an invalid date", e)
+            throw BackupFormatException(BackupError.INVALID_DATE, "The backup contains an invalid date", e)
         }
     }
 
@@ -89,7 +99,7 @@ object BackupCodec {
 
     private fun itemFrom(o: JSONObject): ExpiryItem {
         val title = o.getString("title").trim()
-        if (title.isEmpty()) throw BackupFormatException("The backup contains an item without a title")
+        if (title.isEmpty()) throw BackupFormatException(BackupError.ITEM_WITHOUT_TITLE, "The backup contains an item without a title")
         return ExpiryItem(
             id = o.getLong("id"),
             title = title,

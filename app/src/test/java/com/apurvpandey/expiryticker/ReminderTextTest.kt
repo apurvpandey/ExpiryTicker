@@ -18,12 +18,4 @@ class ReminderTextTest {
 
     @Test fun negativeOffsetsAreIgnored() = assertEquals(listOf(3), ReminderText.allOffsets(item(3, listOf(-2))))
 
-    @Test fun labelsAreReadable() {
-        assertEquals("On the day", ReminderText.label(0))
-        assertEquals("1 day before", ReminderText.label(1))
-        assertEquals("14 days before", ReminderText.label(14))
-    }
-
-    @Test fun summaryJoinsAllOffsets() =
-        assertEquals("30 days before, 7 days before", ReminderText.summary(item(7, listOf(30))))
 }

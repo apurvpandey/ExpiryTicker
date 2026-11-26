@@ -96,14 +96,14 @@ class BackupManager(
                         if (!BackupCodec.isSafeFileName(name)) continue
                         val bytes = readLimited(zip, AttachmentStore.MAX_BYTES)
                         total += bytes.size
-                        if (total > MAX_TOTAL_BYTES) throw BackupFormatException("The backup is too large")
+                        if (total > MAX_TOTAL_BYTES) throw BackupFormatException(BackupError.TOO_LARGE, "The backup is too large")
                         File(dir, name).writeBytes(bytes)
                     }
                     // Unknown entries are ignored, never extracted.
                 }
             }
         }
-        return json ?: throw BackupFormatException("The backup file is missing its data")
+        return json ?: throw BackupFormatException(BackupError.MISSING_DATA, "The backup file is missing its data")
     }
 
     private fun readLimited(stream: InputStream, limit: Long): ByteArray {
@@ -114,7 +114,7 @@ class BackupManager(
             val n = stream.read(buffer)
             if (n < 0) break
             read += n
-            if (read > limit) throw BackupFormatException("The backup contains a file that is too large")
+            if (read > limit) throw BackupFormatException(BackupError.TOO_LARGE, "The backup contains a file that is too large")
             out.write(buffer, 0, n)
         }
         return out.toByteArray()

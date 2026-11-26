@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
+import com.apurvpandey.expiryticker.presentation.common.label
+import androidx.compose.ui.platform.LocalContext
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 
@@ -50,19 +54,14 @@ fun NextUpHero(
 ) {
     val accent = status.urgencyColors().accent
     val countdown = status.countdown()
-    val headline = when (status) {
-        is ExpiryStatus.Overdue -> "${countdown.value} ${countdown.caption}"
-        is ExpiryStatus.DueToday -> "Due today"
-        is ExpiryStatus.Active -> "${countdown.value} ${countdown.caption}"
-        is ExpiryStatus.Completed -> "Done"
-    }
+    val headline = status.headline(LocalContext.current.resources)
     HeroSurface(
         brush = urgencyBrush(accent),
-        modifier = modifier.clickable(role = Role.Button, onClickLabel = "Open ${item.title}", onClick = onOpen)
+        modifier = modifier.clickable(role = Role.Button, onClickLabel = stringResource(R.string.open_item, item.title), onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "NEXT UP",
+                text = stringResource(R.string.next_up),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.78f),
                 letterSpacing = 1.2.sp
@@ -90,7 +89,7 @@ fun NextUpHero(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = item.amountPaise?.let { CurrencyFormatter.format(it) } ?: item.category.displayName,
+                    text = item.amountPaise?.let { CurrencyFormatter.format(it) } ?: item.category.label(),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f),
                     maxLines = 1
@@ -100,13 +99,13 @@ fun NextUpHero(
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.2f))
-                    .clickable(role = Role.Button, onClickLabel = "Mark ${item.title} done", onClick = onMarkDone)
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.mark_item_done, item.title), onClick = onMarkDone)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                Text("Done", style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.done), style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -130,9 +129,9 @@ fun AllClearHero(modifier: Modifier = Modifier) {
                 Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
             }
             Column {
-                Text("All clear", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(stringResource(R.string.all_clear), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
                 Text(
-                    "Nothing is waiting on you right now.",
+                    stringResource(R.string.nothing_is_waiting_on_you_right),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f)
                 )

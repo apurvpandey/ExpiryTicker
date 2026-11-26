@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -102,6 +105,8 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
 import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
+import com.apurvpandey.expiryticker.presentation.common.label
+import com.apurvpandey.expiryticker.presentation.common.labelRes
 import com.apurvpandey.expiryticker.presentation.components.AllClearHero
 import com.apurvpandey.expiryticker.presentation.components.NextUpHero
 import com.apurvpandey.expiryticker.presentation.components.NotificationsOffBanner
@@ -126,6 +131,8 @@ fun DashboardRoute(
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val undoLabel = stringResource(R.string.undo)
+    val resources = LocalContext.current.resources
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -133,8 +140,8 @@ fun DashboardRoute(
             snackbarHostState.currentSnackbarData?.dismiss()
             launch {
                 val result = snackbarHostState.showSnackbar(
-                    message = event.message,
-                    actionLabel = event.undoItem?.let { "Undo" },
+                    message = event.message.resolve(resources),
+                    actionLabel = event.undoItem?.let { undoLabel },
                     withDismissAction = true,
                     duration = SnackbarDuration.Long
                 )
@@ -204,7 +211,7 @@ fun DashboardScreen(
                     title = {
                         Column {
                             Text(
-                                text = "ExpiryTicker",
+                                text = stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -219,12 +226,12 @@ fun DashboardScreen(
                         IconButton(onClick = onToggleSearch) {
                             Icon(
                                 if (uiState.isSearchActive) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = if (uiState.isSearchActive) "Close search" else "Search"
+                                contentDescription = if (uiState.isSearchActive) stringResource(R.string.close_search) else stringResource(R.string.search)
                             )
                         }
                         Box {
                             IconButton(onClick = { sortMenuOpen = true }) {
-                                Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = "Sort")
+                                Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = stringResource(R.string.sort))
                             }
                             DropdownMenu(
                                 expanded = sortMenuOpen,
@@ -232,10 +239,10 @@ fun DashboardScreen(
                             ) {
                                 DashboardSort.entries.forEach { sort ->
                                     DropdownMenuItem(
-                                        text = { Text(sort.label) },
+                                        text = { Text(stringResource(sort.labelRes())) },
                                         leadingIcon = {
                                             if (sort == uiState.sort) {
-                                                Icon(Icons.Default.Check, contentDescription = "Selected")
+                                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.selected))
                                             }
                                         },
                                         onClick = {
@@ -247,10 +254,10 @@ fun DashboardScreen(
                             }
                         }
                         IconButton(onClick = onNavigateToInsights) {
-                            Icon(Icons.Outlined.BarChart, contentDescription = "Insights")
+                            Icon(Icons.Outlined.BarChart, contentDescription = stringResource(R.string.insights))
                         }
                         IconButton(onClick = onNavigateToSettings) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -265,14 +272,14 @@ fun DashboardScreen(
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = onSearchQueryChanged,
-                        placeholder = { Text("Search title, notes or category") },
+                        placeholder = { Text(stringResource(R.string.search_title_notes_or_category)) },
                         leadingIcon = {
                             Icon(Icons.Default.Search, contentDescription = null)
                         },
                         trailingIcon = {
                             if (uiState.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { onSearchQueryChanged("") }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear search text")
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search_text))
                                 }
                             }
                         },
@@ -292,8 +299,8 @@ fun DashboardScreen(
                 onClick = onNavigateToAdd,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                icon = { Icon(Icons.Default.Add, contentDescription = "Add item") },
-                text = { Text("Add item") }
+                icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.shortcut_add_short)) },
+                text = { Text(stringResource(R.string.shortcut_add_short)) }
             )
         }
     ) { innerPadding ->
@@ -333,21 +340,21 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SummaryCard(
-                        label = "Overdue",
+                        label = stringResource(R.string.overdue),
                         count = uiState.overdueCount,
                         accent = c.overdue.accent,
                         onClick = { onFilterSelected(DashboardFilter.OVERDUE) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        label = "Next 7 days",
+                        label = stringResource(R.string.next_7_days),
                         count = uiState.next7DaysCount,
                         accent = c.soon.accent,
                         onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        label = "Next 30 days",
+                        label = stringResource(R.string.next_30_days),
                         count = uiState.next30DaysCount,
                         accent = c.ok.accent,
                         onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
@@ -359,7 +366,7 @@ fun DashboardScreen(
             if (uiState.next30DaysAmountPaise > 0) {
                 item {
                     Text(
-                        text = "${CurrencyFormatter.format(uiState.next30DaysAmountPaise)} to pay in the next 30 days",
+                        text = stringResource(R.string.to_pay_next_30, CurrencyFormatter.format(uiState.next30DaysAmountPaise)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
@@ -373,7 +380,7 @@ fun DashboardScreen(
                         FilterChip(
                             selected = uiState.currentFilter == filter,
                             onClick = { onFilterSelected(filter) },
-                            label = { Text(filter.label) },
+                            label = { Text(stringResource(filter.labelRes())) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = filterIcon(filter),
@@ -394,7 +401,7 @@ fun DashboardScreen(
                             FilterChip(
                                 selected = selected,
                                 onClick = { onCategorySelected(if (selected) null else category) },
-                                label = { Text(category.displayName) }
+                                label = { Text(category.label()) }
                             )
                         }
                     }
@@ -448,15 +455,17 @@ fun DashboardScreen(
 private fun SectionHeader(bucket: DueBucket, count: Int, modifier: Modifier = Modifier) {
     val color = if (bucket == DueBucket.OVERDUE) MaterialTheme.colorScheme.error
     else MaterialTheme.colorScheme.onSurfaceVariant
+    val bucketName = stringResource(bucket.labelRes())
+    val a11y = pluralStringResource(R.plurals.bucket_a11y, count, bucketName, count)
     Text(
-        text = "${bucket.label}  ·  $count",
+        text = stringResource(R.string.bucket_header, bucketName, count),
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
         color = color,
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 4.dp, top = 8.dp)
-            .semantics { contentDescription = "${bucket.label}, $count items" }
+            .semantics { contentDescription = a11y }
     )
 }
 
@@ -516,7 +525,7 @@ private fun SwipeableItemCard(
                 if (state.dismissDirection != SwipeToDismissBoxValue.Settled) {
                     Icon(
                         imageVector = if (toEnd) Icons.Default.Check else Icons.Default.Delete,
-                        contentDescription = if (toEnd) "Mark done" else "Delete",
+                        contentDescription = if (toEnd) stringResource(R.string.mark_done) else stringResource(R.string.delete),
                         tint = if (toEnd) MaterialTheme.colorScheme.onPrimaryContainer
                         else MaterialTheme.colorScheme.onErrorContainer
                     )
@@ -543,14 +552,14 @@ private fun NoMatchesState(onClear: () -> Unit) {
             modifier = Modifier.size(56.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text("No matches", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.no_matches), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(
-            "Nothing fits your search or category.",
+            stringResource(R.string.nothing_fits_your_search_or_category),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        OutlinedButton(onClick = onClear) { Text("Clear search and category") }
+        OutlinedButton(onClick = onClear) { Text(stringResource(R.string.clear_search_and_category)) }
     }
 }
 
@@ -572,18 +581,18 @@ private fun EmptyState(filter: DashboardFilter, onAddItem: () -> Unit) {
         DashboardFilter.ALL -> Triple(Icons.Outlined.Inbox, "", "")
         DashboardFilter.OVERDUE -> Triple(
             Icons.Outlined.CheckCircle,
-            "You're all caught up",
-            "No overdue items right now."
+            stringResource(R.string.empty_overdue_title),
+            stringResource(R.string.empty_overdue_body)
         )
         DashboardFilter.UPCOMING -> Triple(
             Icons.Outlined.DateRange,
-            "Nothing coming up",
-            "No renewals or expiries in the near future."
+            stringResource(R.string.empty_upcoming_title),
+            stringResource(R.string.empty_upcoming_body)
         )
         DashboardFilter.COMPLETED -> Triple(
             Icons.Outlined.TaskAlt,
-            "No completed items",
-            "Items you mark as renewed or completed will appear here."
+            stringResource(R.string.empty_completed_title),
+            stringResource(R.string.empty_completed_body)
         )
     }
 
@@ -623,13 +632,13 @@ private fun IllustrationEmptyState(onAddItem: () -> Unit) {
                 )
             }
             Text(
-                text = "Nothing to track yet",
+                text = stringResource(R.string.nothing_to_track_yet),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Add an expiry or renewal and ExpiryTicker will remind you before it's due.",
+                text = stringResource(R.string.add_an_expiry_or_renewal_and),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -638,7 +647,7 @@ private fun IllustrationEmptyState(onAddItem: () -> Unit) {
             Button(onClick = onAddItem) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
-                Text("Add your first item")
+                Text(stringResource(R.string.add_your_first_item))
             }
         }
     }

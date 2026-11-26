@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import com.apurvpandey.expiryticker.data.files.AttachmentTooLargeException
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.presentation.common.UiText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -30,10 +33,10 @@ data class ExpiryDetailUiState(
     val attachments: List<Attachment> = emptyList(),
     val showDeleteDialog: Boolean = false,
     val showRenewDialog: Boolean = false,
-    val renewAmountError: String? = null,
+    val renewAmountError: UiText? = null,
     val isDeleted: Boolean = false,
     val errorMessage: String? = null,
-    val snackbarMessage: String? = null
+    val snackbarMessage: UiText? = null
 )
 
 class ExpiryDetailViewModel(
@@ -85,7 +88,7 @@ class ExpiryDetailViewModel(
     fun showRenewDialog() = _uiState.update { it.copy(showRenewDialog = true, renewAmountError = null) }
     fun dismissRenewDialog() = _uiState.update { it.copy(showRenewDialog = false, renewAmountError = null) }
     fun clearSnackbarMessage() = _uiState.update { it.copy(snackbarMessage = null) }
-    fun showMessage(message: String) = _uiState.update { it.copy(snackbarMessage = message) }
+    fun showMessage(message: UiText) = _uiState.update { it.copy(snackbarMessage = message) }
 
     fun deleteItem() {
         val item = _uiState.value.item ?: return
@@ -100,7 +103,7 @@ class ExpiryDetailViewModel(
         val item = _uiState.value.item ?: return
         val amount = if (amountText.isBlank()) item.amountPaise else CurrencyFormatter.parseToPaise(amountText)
         if (amountText.isNotBlank() && amount == null) {
-            _uiState.update { it.copy(renewAmountError = "Enter a valid amount") }
+            _uiState.update { it.copy(renewAmountError = UiText.of(R.string.err_amount_short)) }
             return
         }
         viewModelScope.launch {
@@ -109,7 +112,7 @@ class ExpiryDetailViewModel(
                 it.copy(
                     showRenewDialog = false,
                     renewAmountError = null,
-                    snackbarMessage = if (outcome.renewed) "Marked as renewed" else "Marked as completed"
+                    snackbarMessage = UiText.of(if (outcome.renewed) R.string.msg_marked_renewed else R.string.msg_marked_completed)
                 )
             }
         }
@@ -119,7 +122,7 @@ class ExpiryDetailViewModel(
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
             actions.reopen(item)
-            _uiState.update { it.copy(snackbarMessage = "Moved back to your list") }
+            _uiState.update { it.copy(snackbarMessage = UiText.of(R.string.msg_moved_back)) }
         }
     }
 
@@ -134,9 +137,13 @@ class ExpiryDetailViewModel(
                     )
                 )
             }.onSuccess {
-                showMessage("File attached")
+                showMessage(UiText.of(R.string.msg_file_attached))
             }.onFailure {
-                showMessage(it.message?.takeIf { m -> m.startsWith("File is larger") } ?: "Could not attach file")
+                showMessage(
+                    (it as? AttachmentTooLargeException)
+                        ?.let { e -> UiText.of(R.string.err_file_too_large, e.maxMegabytes.toInt()) }
+                        ?: UiText.of(R.string.err_attach_failed)
+                )
             }
         }
     }
@@ -155,7 +162,7 @@ class ExpiryDetailViewModel(
                     fileName = fileName, sizeBytes = file.length()
                 )
             )
-            showMessage("Photo attached")
+            showMessage(UiText.of(R.string.msg_photo_attached))
         }
     }
 
@@ -163,7 +170,7 @@ class ExpiryDetailViewModel(
         viewModelScope.launch {
             attachmentRepository.deleteById(attachment.id)
             store.delete(attachment.fileName)
-            showMessage("Attachment removed")
+            showMessage(UiText.of(R.string.msg_attachment_removed))
         }
     }
 

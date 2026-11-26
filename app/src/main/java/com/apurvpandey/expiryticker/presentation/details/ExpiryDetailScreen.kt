@@ -1,5 +1,9 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import com.apurvpandey.expiryticker.presentation.common.asString
+import com.apurvpandey.expiryticker.presentation.common.UiText
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -95,7 +99,10 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
 import com.apurvpandey.expiryticker.domain.model.RenewalRecord
 import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
-import com.apurvpandey.expiryticker.presentation.components.countdown
+import com.apurvpandey.expiryticker.presentation.common.label
+import com.apurvpandey.expiryticker.presentation.common.reminderSummary
+import com.apurvpandey.expiryticker.presentation.common.resources
+import com.apurvpandey.expiryticker.presentation.components.headline
 import com.apurvpandey.expiryticker.presentation.components.urgencyBrush
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
@@ -134,7 +141,7 @@ fun ExpiryDetailRoute(
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(it.resolve(context.resources))
             viewModel.clearSnackbarMessage()
         }
     }
@@ -162,14 +169,14 @@ fun ExpiryDetailRoute(
         onDeleteConfirmed = viewModel::deleteItem,
         onDeleteDismissed = viewModel::dismissDeleteConfirmation,
         onOpenWebsite = { url ->
-            if (!ExternalActions.openUrl(context, url)) viewModel.showMessage("Could not open the link")
+            if (!ExternalActions.openUrl(context, url)) viewModel.showMessage(UiText.of(R.string.err_open_link))
         },
         onCall = { phone ->
-            if (!ExternalActions.dial(context, phone)) viewModel.showMessage("Could not open the dialer")
+            if (!ExternalActions.dial(context, phone)) viewModel.showMessage(UiText.of(R.string.err_open_dialer))
         },
         onAddToCalendar = {
             uiState.item?.let {
-                if (!ExternalActions.addToCalendar(context, it)) viewModel.showMessage("No calendar app found")
+                if (!ExternalActions.addToCalendar(context, it)) viewModel.showMessage(UiText.of(R.string.err_no_calendar))
             }
         },
         onAttachFile = { pickFile.launch(arrayOf("image/*", "application/pdf")) },
@@ -180,12 +187,12 @@ fun ExpiryDetailRoute(
                 takePhoto.launch(uri)
             } catch (e: android.content.ActivityNotFoundException) {
                 pendingPhoto = null
-                viewModel.showMessage("No camera app found")
+                viewModel.showMessage(UiText.of(R.string.err_no_camera))
             }
         },
         onOpenAttachment = { attachment ->
             if (!ExternalActions.openAttachment(context, store, attachment)) {
-                viewModel.showMessage("No app can open this file")
+                viewModel.showMessage(UiText.of(R.string.err_no_viewer))
             }
         },
         onRemoveAttachment = viewModel::removeAttachment
@@ -223,12 +230,12 @@ fun ExpiryDetailScreen(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                     }
                 }
             )
@@ -247,10 +254,10 @@ fun ExpiryDetailScreen(
                         ) {
                             Icon(Icons.Outlined.Undo, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.size(8.dp))
-                            Text("Reopen", style = MaterialTheme.typography.labelLarge)
+                            Text(stringResource(R.string.reopen), style = MaterialTheme.typography.labelLarge)
                         }
                     } else {
-                        val renewLabel = if (item.recurrence != RecurrenceType.NONE) "Mark as renewed" else "Mark as completed"
+                        val renewLabel = if (item.recurrence != RecurrenceType.NONE) stringResource(R.string.mark_as_renewed) else stringResource(R.string.mark_as_completed)
                         Button(
                             onClick = onRenewClicked,
                             modifier = Modifier
@@ -276,7 +283,7 @@ fun ExpiryDetailScreen(
             item == null -> Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
-            ) { Text("Item not found.") }
+            ) { Text(stringResource(R.string.item_not_found)) }
 
             else -> DetailContent(
                 item = item,
@@ -297,15 +304,15 @@ fun ExpiryDetailScreen(
     if (uiState.showDeleteDialog) {
         AlertDialog(
             onDismissRequest = onDeleteDismissed,
-            title = { Text("Delete item?") },
-            text = { Text("\"${item?.title}\" and its history and attachments will be permanently removed.") },
+            title = { Text(stringResource(R.string.delete_item)) },
+            text = { Text(stringResource(R.string.delete_item_body, item?.title.orEmpty())) },
             confirmButton = {
                 TextButton(
                     onClick = onDeleteConfirmed,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = onDeleteDismissed) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = onDeleteDismissed) { Text(stringResource(R.string.cancel)) } }
         )
     }
 
@@ -322,7 +329,7 @@ fun ExpiryDetailScreen(
 @Composable
 private fun RenewDialog(
     item: ExpiryItem,
-    error: String?,
+    error: UiText?,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -332,27 +339,27 @@ private fun RenewDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (renews) "Mark as renewed" else "Mark as completed") },
+        title = { Text(if (renews) stringResource(R.string.mark_as_renewed) else stringResource(R.string.mark_as_completed)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "What did it cost this time? It is saved in the history so you can track price changes.",
+                    stringResource(R.string.what_did_it_cost_this_time),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { raw -> amount = raw.filter { it.isDigit() || it == '.' } },
-                    label = { Text("Amount paid (${CurrencyFormatter.symbol()}, optional)") },
+                    label = { Text(stringResource(R.string.amount_paid_label, CurrencyFormatter.symbol())) },
                     isError = error != null,
-                    supportingText = error?.let { { Text(it) } },
+                    supportingText = error?.let { { Text(it.asString()) } },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(amount) }) { Text("Confirm") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = { onConfirm(amount) }) { Text(stringResource(R.string.confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }
 
@@ -383,24 +390,24 @@ private fun DetailContent(
 
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (item.renewalUrl.isNotBlank()) {
-                ActionChip("Website", Icons.Outlined.Language) { onOpenWebsite(item.renewalUrl) }
+                ActionChip(stringResource(R.string.website), Icons.Outlined.Language) { onOpenWebsite(item.renewalUrl) }
             }
             if (item.phone.isNotBlank()) {
-                ActionChip("Call", Icons.Outlined.Phone) { onCall(item.phone) }
+                ActionChip(stringResource(R.string.call), Icons.Outlined.Phone) { onCall(item.phone) }
             }
-            ActionChip("Add to calendar", Icons.Outlined.CalendarMonth, onAddToCalendar)
+            ActionChip(stringResource(R.string.add_to_calendar), Icons.Outlined.CalendarMonth, onAddToCalendar)
         }
 
         InfoCard {
-            DetailRow(Icons.Outlined.Event, "Due date", item.dueDate.format(longDate))
-            DetailRow(Icons.Outlined.NotificationsActive, "Reminders", ReminderText.summary(item))
-            DetailRow(Icons.Outlined.Repeat, "Repeats", item.recurrence.displayName)
+            DetailRow(Icons.Outlined.Event, stringResource(R.string.due_date_2), item.dueDate.format(longDate))
+            DetailRow(Icons.Outlined.NotificationsActive, stringResource(R.string.reminders), reminderSummary(resources(), item))
+            DetailRow(Icons.Outlined.Repeat, stringResource(R.string.repeats), item.recurrence.label())
             if (item.amountPaise != null) {
-                DetailRow(Icons.Outlined.Payments, "Expected cost", CurrencyFormatter.format(item.amountPaise))
+                DetailRow(Icons.Outlined.Payments, stringResource(R.string.expected_cost), CurrencyFormatter.format(item.amountPaise))
             }
             item.lastRenewedAt?.let { instant ->
                 DetailRow(
-                    Icons.Outlined.History, "Last renewed",
+                    Icons.Outlined.History, stringResource(R.string.last_renewed),
                     instant.atZone(ZoneId.systemDefault()).toLocalDate().format(longDate)
                 )
             }
@@ -424,7 +431,7 @@ private fun DetailContent(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    CardLabel("NOTES")
+                    CardLabel(stringResource(R.string.notes_2))
                     Text(item.notes, style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -437,7 +444,7 @@ private fun DetailContent(
         ) {
             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.size(6.dp))
-            Text("Delete item", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.delete_item_2), style = MaterialTheme.typography.labelLarge)
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -466,10 +473,10 @@ private fun AttachmentsCard(
             modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Box(Modifier.padding(horizontal = 16.dp)) { CardLabel("ATTACHMENTS") }
+            Box(Modifier.padding(horizontal = 16.dp)) { CardLabel(stringResource(R.string.attachments)) }
             if (attachments.isEmpty()) {
                 Text(
-                    "Keep the policy, receipt or certificate with the item.",
+                    stringResource(R.string.keep_the_policy_receipt_or_certificate),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -479,7 +486,7 @@ private fun AttachmentsCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClickLabel = "Open ${att.displayName}") { onOpen(att) }
+                        .clickable(onClickLabel = stringResource(R.string.open_attachment, att.displayName)) { onOpen(att) }
                         .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -502,7 +509,7 @@ private fun AttachmentsCard(
                         )
                     }
                     IconButton(onClick = { toRemove = att }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "Remove ${att.displayName}")
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.remove_attachment_named, att.displayName))
                     }
                 }
             }
@@ -513,12 +520,12 @@ private fun AttachmentsCard(
                 TextButton(onClick = onAttachFile) {
                     Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("Attach file")
+                    Text(stringResource(R.string.attach_file))
                 }
                 TextButton(onClick = onTakePhoto) {
                     Icon(Icons.Outlined.AddAPhoto, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("Take photo")
+                    Text(stringResource(R.string.take_photo))
                 }
             }
         }
@@ -526,15 +533,15 @@ private fun AttachmentsCard(
     toRemove?.let { att ->
         AlertDialog(
             onDismissRequest = { toRemove = null },
-            title = { Text("Remove attachment?") },
-            text = { Text("\"${att.displayName}\" will be deleted from this device.") },
+            title = { Text(stringResource(R.string.remove_attachment)) },
+            text = { Text(stringResource(R.string.remove_attachment_body, att.displayName)) },
             confirmButton = {
                 TextButton(
                     onClick = { onRemove(att); toRemove = null },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Remove") }
+                ) { Text(stringResource(R.string.remove)) }
             },
-            dismissButton = { TextButton(onClick = { toRemove = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { toRemove = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
@@ -546,7 +553,7 @@ private fun HistoryCard(history: List<RenewalRecord>) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            CardLabel("HISTORY")
+            CardLabel(stringResource(R.string.history))
             // `history` is newest first, so the entry to compare against is the next one down.
             history.forEachIndexed { index, record ->
                 val previous = history.getOrNull(index + 1)
@@ -565,7 +572,7 @@ private fun HistoryCard(history: List<RenewalRecord>) {
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            record.dueAfter?.let { "Next due ${it.format(shortDate)}" } ?: "Completed",
+                            record.dueAfter?.let { "Next due ${it.format(shortDate)}" } ?: stringResource(R.string.completed),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -578,7 +585,7 @@ private fun HistoryCard(history: List<RenewalRecord>) {
                             // A price rise is the thing worth noticing, so it gets the warning colour.
                             val colors = ExpiryTheme.colors
                             Text(
-                                text = (if (change > 0) "▲ +" else "▼ ") + "$change%",
+                                text = stringResource(if (change > 0) R.string.price_rise else R.string.price_fall, change),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (change > 0) colors.overdue.accent else colors.ok.accent,
                                 fontWeight = FontWeight.Bold
@@ -595,13 +602,7 @@ private fun HistoryCard(history: List<RenewalRecord>) {
 @Composable
 private fun DetailHero(item: ExpiryItem, status: ExpiryStatus?) {
     val accent = status?.urgencyColors()?.accent ?: MaterialTheme.colorScheme.primary
-    val countdown = status?.countdown()
-    val headline = when (status) {
-        is ExpiryStatus.Overdue, is ExpiryStatus.Active -> "${countdown?.value} ${countdown?.caption}"
-        is ExpiryStatus.DueToday -> "Due today"
-        is ExpiryStatus.Completed -> "Completed"
-        null -> ""
-    }
+    val headline = status?.headline(LocalContext.current.resources).orEmpty()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -614,7 +615,7 @@ private fun DetailHero(item: ExpiryItem, status: ExpiryStatus?) {
             CategoryIconBadge(category = item.category, size = 52.dp, iconSize = 26.dp)
             Column {
                 Text(item.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(item.category.displayName, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+                Text(item.category.label(), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
             }
         }
         if (headline.isNotEmpty()) {

@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.settings
 
+import com.apurvpandey.expiryticker.presentation.common.UiText
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,20 +70,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
 import com.apurvpandey.expiryticker.BuildConfig
+import com.apurvpandey.expiryticker.presentation.common.reminderLabel
+import com.apurvpandey.expiryticker.presentation.common.resources
 import com.apurvpandey.expiryticker.presentation.theme.AppTheme
 
-private val reminderOptions = listOf(
-    1 to "1 day before",
-    3 to "3 days before",
-    7 to "7 days before",
-    14 to "14 days before",
-    30 to "30 days before"
-)
+private val reminderDayOptions = listOf(1, 3, 7, 14, 30)
 
 private val themeOptions = listOf(
-    AppTheme.LIGHT to "Light",
-    AppTheme.SYSTEM to "System",
-    AppTheme.DARK to "Dark"
+    AppTheme.LIGHT to R.string.light,
+    AppTheme.SYSTEM to R.string.system,
+    AppTheme.DARK to R.string.dark
 )
 
 @Composable
@@ -108,7 +107,7 @@ fun SettingsRoute(
     ) { uri -> pendingRestore = uri }
 
     LaunchedEffect(viewModel) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+        viewModel.messages.collect { snackbarHostState.showSnackbar(it.resolve(context.resources)) }
     }
 
     SettingsScreen(
@@ -131,7 +130,7 @@ fun SettingsRoute(
         onCurrencyChange = viewModel::setCurrency,
         onAppLockChange = { enabled ->
             if (enabled && !AppLock.isAvailable(context)) {
-                viewModel.showMessage("Set up a screen lock, fingerprint or face on this device first")
+                viewModel.showMessage(UiText.of(R.string.err_set_up_screen_lock))
             } else {
                 viewModel.setAppLockEnabled(enabled)
             }
@@ -167,10 +166,10 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -185,16 +184,14 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // ─── Notifications ───────────────────────────────────────────
-            SectionLabel("Notifications")
+            SectionLabel(stringResource(R.string.notifications))
             Spacer(Modifier.height(4.dp))
 
             SettingsGroup {
-                val currentReminderLabel = reminderOptions
-                    .find { it.first == uiState.defaultReminderDays }?.second
-                    ?: "${uiState.defaultReminderDays} days before"
+                val currentReminderLabel = reminderLabel(resources(), uiState.defaultReminderDays)
 
                 ListItem(
-                    headlineContent = { Text("Default reminder") },
+                    headlineContent = { Text(stringResource(R.string.default_reminder)) },
                     supportingContent = { Text(currentReminderLabel) },
                     leadingContent = {
                         Icon(Icons.Default.Schedule, contentDescription = null)
@@ -205,7 +202,7 @@ fun SettingsScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ListItem(
-                    headlineContent = { Text("Reminder time") },
+                    headlineContent = { Text(stringResource(R.string.reminder_time)) },
                     supportingContent = { Text(formatHour(uiState.reminderHour)) },
                     leadingContent = {
                         Icon(Icons.Default.AccessTime, contentDescription = null)
@@ -217,8 +214,8 @@ fun SettingsScreen(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
-                        headlineContent = { Text("Notification permission") },
-                        supportingContent = { Text("Manage in system settings") },
+                        headlineContent = { Text(stringResource(R.string.notification_permission)) },
+                        supportingContent = { Text(stringResource(R.string.manage_in_system_settings)) },
                         leadingContent = {
                             Icon(Icons.Default.Notifications, contentDescription = null)
                         },
@@ -229,8 +226,8 @@ fun SettingsScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ListItem(
-                    headlineContent = { Text("Send test notification") },
-                    supportingContent = { Text("Check that reminders reach you") },
+                    headlineContent = { Text(stringResource(R.string.send_test_notification)) },
+                    supportingContent = { Text(stringResource(R.string.check_that_reminders_reach_you)) },
                     leadingContent = {
                         Icon(Icons.Default.NotificationsActive, contentDescription = null)
                     },
@@ -242,7 +239,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
 
             // ─── Appearance ──────────────────────────────────────────────
-            SectionLabel("Appearance")
+            SectionLabel(stringResource(R.string.appearance))
             Spacer(Modifier.height(4.dp))
 
             SettingsGroup {
@@ -253,12 +250,12 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Theme",
+                        text = stringResource(R.string.theme),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        themeOptions.forEachIndexed { index, (theme, label) ->
+                        themeOptions.forEachIndexed { index, (theme, labelRes) ->
                             SegmentedButton(
                                 selected = uiState.appTheme == theme,
                                 onClick = { onThemeChange(theme) },
@@ -266,7 +263,7 @@ fun SettingsScreen(
                                     index = index,
                                     count = themeOptions.size
                                 ),
-                                label = { Text(label) }
+                                label = { Text(stringResource(labelRes)) }
                             )
                         }
                     }
@@ -275,8 +272,8 @@ fun SettingsScreen(
 
             SettingsGroup {
                 ListItem(
-                    headlineContent = { Text("Currency") },
-                    supportingContent = { Text("${uiState.currencyCode}. Existing amounts are not converted.") },
+                    headlineContent = { Text(stringResource(R.string.currency)) },
+                    supportingContent = { Text(stringResource(R.string.currency_summary, uiState.currencyCode)) },
                     leadingContent = { Icon(Icons.Default.Payments, contentDescription = null) },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                     modifier = Modifier.clickable { showCurrencyDialog = true }
@@ -286,14 +283,14 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
 
             // ─── Privacy ─────────────────────────────────────────────────
-            SectionLabel("Privacy")
+            SectionLabel(stringResource(R.string.privacy))
             Spacer(Modifier.height(4.dp))
 
             SettingsGroup {
                 ListItem(
-                    headlineContent = { Text("App lock") },
+                    headlineContent = { Text(stringResource(R.string.app_lock)) },
                     supportingContent = {
-                        Text("Ask for fingerprint, face or screen lock when opening. Notifications and the widget still show item names.")
+                        Text(stringResource(R.string.ask_for_fingerprint_face_or_screen))
                     },
                     leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingContent = {
@@ -310,13 +307,13 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
 
             // ─── Data ────────────────────────────────────────────────────
-            SectionLabel("Data")
+            SectionLabel(stringResource(R.string.data))
             Spacer(Modifier.height(4.dp))
 
             SettingsGroup {
                 ListItem(
-                    headlineContent = { Text("Export to CSV") },
-                    supportingContent = { Text("Save all items as a spreadsheet file") },
+                    headlineContent = { Text(stringResource(R.string.export_to_csv)) },
+                    supportingContent = { Text(stringResource(R.string.save_all_items_as_a_spreadsheet)) },
                     leadingContent = {
                         Icon(Icons.Default.FileDownload, contentDescription = null)
                     },
@@ -325,16 +322,16 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ListItem(
-                    headlineContent = { Text("Back up everything") },
-                    supportingContent = { Text("Items, history and attachments in one file") },
+                    headlineContent = { Text(stringResource(R.string.back_up_everything)) },
+                    supportingContent = { Text(stringResource(R.string.items_history_and_attachments_in_one)) },
                     leadingContent = { Icon(Icons.Default.CloudUpload, contentDescription = null) },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                     modifier = Modifier.clickable(onClick = onBackup)
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ListItem(
-                    headlineContent = { Text("Restore from backup") },
-                    supportingContent = { Text("Replaces everything currently in the app") },
+                    headlineContent = { Text(stringResource(R.string.restore_from_backup)) },
+                    supportingContent = { Text(stringResource(R.string.replaces_everything_currently_in_the_app)) },
                     leadingContent = { Icon(Icons.Default.Restore, contentDescription = null) },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                     modifier = Modifier.clickable(onClick = onRestore)
@@ -344,13 +341,13 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
 
             // ─── About ───────────────────────────────────────────────────
-            SectionLabel("About")
+            SectionLabel(stringResource(R.string.about))
             Spacer(Modifier.height(4.dp))
 
             SettingsGroup {
                 ListItem(
-                    headlineContent = { Text("ExpiryTicker") },
-                    supportingContent = { Text("Version ${BuildConfig.VERSION_NAME}") },
+                    headlineContent = { Text(stringResource(R.string.app_name)) },
+                    supportingContent = { Text(stringResource(R.string.version_label, BuildConfig.VERSION_NAME)) },
                     leadingContent = {
                         Icon(Icons.Default.Info, contentDescription = null)
                     },
@@ -365,12 +362,9 @@ fun SettingsScreen(
     pendingRestore?.let { uri ->
         AlertDialog(
             onDismissRequest = onRestoreDismissed,
-            title = { Text("Replace everything?") },
+            title = { Text(stringResource(R.string.replace_everything)) },
             text = {
-                Text(
-                    "Restoring deletes all current items, history and attachments and replaces them " +
-                        "with the contents of the backup. This cannot be undone."
-                )
+                Text(stringResource(R.string.restore_body))
             },
             confirmButton = {
                 TextButton(
@@ -378,16 +372,16 @@ fun SettingsScreen(
                     colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text("Replace") }
+                ) { Text(stringResource(R.string.replace)) }
             },
-            dismissButton = { TextButton(onClick = onRestoreDismissed) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = onRestoreDismissed) { Text(stringResource(R.string.cancel)) } }
         )
     }
 
     if (showCurrencyDialog) {
         AlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
-            title = { Text("Currency") },
+            title = { Text(stringResource(R.string.currency)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     CurrencyFormatter.supportedCodes.forEach { code ->
@@ -409,14 +403,14 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showCurrencyDialog = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 
     if (showHourDialog) {
         AlertDialog(
             onDismissRequest = { showHourDialog = false },
-            title = { Text("Reminder time") },
+            title = { Text(stringResource(R.string.reminder_time)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     (6..22).forEach { hour ->
@@ -448,7 +442,7 @@ fun SettingsScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showHourDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showHourDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -456,10 +450,10 @@ fun SettingsScreen(
     if (showReminderDialog) {
         AlertDialog(
             onDismissRequest = { showReminderDialog = false },
-            title = { Text("Default reminder") },
+            title = { Text(stringResource(R.string.default_reminder)) },
             text = {
                 Column {
-                    reminderOptions.forEach { (days, label) ->
+                    reminderDayOptions.forEach { days ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -478,7 +472,7 @@ fun SettingsScreen(
                                 }
                             )
                             Text(
-                                text = label,
+                                text = reminderLabel(resources(), days),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 4.dp)
                             )
@@ -488,7 +482,7 @@ fun SettingsScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showReminderDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showReminderDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

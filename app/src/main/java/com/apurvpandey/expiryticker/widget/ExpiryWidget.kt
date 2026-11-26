@@ -16,7 +16,6 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.currentState
 import androidx.glance.layout.size
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import com.apurvpandey.expiryticker.R
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -43,6 +42,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import com.apurvpandey.expiryticker.ExpiryTickerApplication
 import com.apurvpandey.expiryticker.MainActivity
@@ -51,6 +51,8 @@ import com.apurvpandey.expiryticker.core.util.ConfirmTap
 import com.apurvpandey.expiryticker.core.util.WidgetRow
 import com.apurvpandey.expiryticker.core.util.WidgetSnapshot
 import com.apurvpandey.expiryticker.core.util.WidgetSnapshots
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.presentation.common.labelRes
 import com.apurvpandey.expiryticker.presentation.components.countdown
 import com.apurvpandey.expiryticker.presentation.components.shortLabel
 import com.apurvpandey.expiryticker.presentation.theme.DarkColorScheme
@@ -130,7 +132,7 @@ private fun Header(context: Context, snapshot: WidgetSnapshot, compact: Boolean)
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (compact) "Due soon" else "ExpiryTicker",
+            text = context.getString(if (compact) R.string.widget_due_soon else R.string.widget_title),
             style = TextStyle(
                 color = GlanceTheme.colors.onSurfaceVariant,
                 fontSize = 12.sp,
@@ -140,7 +142,7 @@ private fun Header(context: Context, snapshot: WidgetSnapshot, compact: Boolean)
         )
         if (snapshot.overdueCount > 0) {
             Text(
-                text = "${snapshot.overdueCount} overdue",
+                text = context.getString(R.string.widget_overdue_count, snapshot.overdueCount),
                 style = TextStyle(
                     color = accent(snapshot.rows.firstOrNull()?.status ?: ExpiryStatus.Overdue(1)),
                     fontSize = 12.sp,
@@ -173,7 +175,7 @@ private fun Header(context: Context, snapshot: WidgetSnapshot, compact: Boolean)
 
 @Composable
 private fun NextUp(context: Context, row: WidgetRow, armedId: Long?) {
-    val c = row.status.countdown()
+    val c = row.status.countdown(LocalContext.current.resources)
     Column(modifier = GlanceModifier.fillMaxWidth().clickable(launch(context, row.id))) {
         Text(
             text = c.value,
@@ -219,7 +221,7 @@ private fun ItemRow(row: WidgetRow, context: Context, compact: Boolean, armedId:
             )
             // In a narrow widget the countdown moves under the title instead of beside it.
             Text(
-                text = if (compact) row.status.shortLabel() else row.category.displayName,
+                text = if (compact) row.status.shortLabel(LocalContext.current.resources) else LocalContext.current.getString(row.category.labelRes()),
                 maxLines = 1,
                 style = TextStyle(
                     color = if (compact) accent(row.status) else GlanceTheme.colors.onSurfaceVariant,
@@ -231,7 +233,7 @@ private fun ItemRow(row: WidgetRow, context: Context, compact: Boolean, armedId:
         if (!compact) {
             Spacer(GlanceModifier.width(8.dp))
             Text(
-                text = row.status.shortLabel(),
+                text = row.status.shortLabel(LocalContext.current.resources),
                 style = TextStyle(color = accent(row.status), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
         }
@@ -255,13 +257,13 @@ private fun DoneButton(row: WidgetRow, armed: Boolean) {
     ) {
         if (armed) {
             Text(
-                text = "Done?",
+                text = LocalContext.current.getString(R.string.widget_confirm),
                 style = TextStyle(color = GlanceTheme.colors.onPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
         } else {
             Image(
                 provider = ImageProvider(R.drawable.ic_widget_check),
-                contentDescription = "Mark ${row.title} done",
+                contentDescription = LocalContext.current.getString(R.string.widget_mark_done_desc, row.title),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
                 modifier = GlanceModifier.size(18.dp)
             )
@@ -273,11 +275,11 @@ private fun DoneButton(row: WidgetRow, armed: Boolean) {
 private fun AllClear() {
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         Text(
-            text = "All clear",
+            text = LocalContext.current.getString(R.string.all_clear),
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         )
         Text(
-            text = "Nothing is waiting on you.",
+            text = LocalContext.current.getString(R.string.widget_all_clear_sub),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp)
         )
     }

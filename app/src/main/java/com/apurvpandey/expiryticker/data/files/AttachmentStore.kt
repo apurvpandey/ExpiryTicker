@@ -11,6 +11,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
+class AttachmentTooLargeException(val maxMegabytes: Long) : Exception("File is larger than $maxMegabytes MB")
+
 /** Keeps attachment bytes in the app's private storage and hands them out through a FileProvider. */
 class AttachmentStore(private val context: Context) {
 
@@ -30,7 +32,7 @@ class AttachmentStore(private val context: Context) {
                 c.getColumnIndex(OpenableColumns.SIZE).takeIf { it >= 0 }?.let { declaredSize = c.getLong(it) }
             }
         }
-        require(declaredSize < MAX_BYTES) { "File is larger than ${MAX_BYTES / (1024 * 1024)} MB" }
+        if (declaredSize >= MAX_BYTES) throw AttachmentTooLargeException(MAX_BYTES / (1024 * 1024))
 
         val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
             ?: displayName.substringAfterLast('.', "bin")
@@ -45,7 +47,7 @@ class AttachmentStore(private val context: Context) {
                         val n = input.read(buffer)
                         if (n < 0) break
                         copied += n
-                        require(copied <= MAX_BYTES) { "File is larger than ${MAX_BYTES / (1024 * 1024)} MB" }
+                        if (copied > MAX_BYTES) throw AttachmentTooLargeException(MAX_BYTES / (1024 * 1024))
                         out.write(buffer, 0, n)
                     }
                 }

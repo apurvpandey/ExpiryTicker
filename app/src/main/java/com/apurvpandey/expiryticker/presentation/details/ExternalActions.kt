@@ -1,5 +1,6 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import com.apurvpandey.expiryticker.presentation.common.labelRes
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -29,7 +30,7 @@ object ExternalActions {
         val dayStart = item.dueDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
         val intent = Intent(Intent.ACTION_INSERT)
             .setData(CalendarContract.Events.CONTENT_URI)
-            .putExtra(CalendarContract.Events.TITLE, "${item.title} (${item.category.displayName})")
+            .putExtra(CalendarContract.Events.TITLE, "${item.title} (${context.getString(item.category.labelRes())})")
             .putExtra(CalendarContract.Events.DESCRIPTION, item.notes)
             .putExtra(CalendarContract.Events.ALL_DAY, true)
             .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, dayStart)

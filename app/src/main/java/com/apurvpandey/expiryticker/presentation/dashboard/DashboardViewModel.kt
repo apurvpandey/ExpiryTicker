@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.dashboard
 
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.presentation.common.UiText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,19 +23,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-enum class DashboardFilter(val label: String) {
-    ALL("All"),
-    OVERDUE("Overdue"),
-    UPCOMING("Upcoming"),
-    COMPLETED("Completed")
-}
+enum class DashboardFilter { ALL, OVERDUE, UPCOMING, COMPLETED }
 
-enum class DashboardSort(val label: String) {
-    DUE_DATE("Due date"),
-    TITLE("Name"),
-    AMOUNT("Amount"),
-    RECENT("Recently added")
-}
+enum class DashboardSort { DUE_DATE, TITLE, AMOUNT, RECENT }
 
 data class ExpiryItemWithStatus(
     val item: ExpiryItem,
@@ -68,7 +60,7 @@ data class DashboardUiState(
 }
 
 /** One-off events shown as a snackbar with an optional undo. */
-data class DashboardEvent(val message: String, val undoItem: ExpiryItem?, val historyId: Long? = null)
+data class DashboardEvent(val message: UiText, val undoItem: ExpiryItem?, val historyId: Long? = null)
 
 class DashboardViewModel(
     repository: ExpiryItemRepository,
@@ -186,7 +178,10 @@ class DashboardViewModel(
             val outcome = actions.markDone(item)
             _events.emit(
                 DashboardEvent(
-                    message = if (outcome.renewed) "\"${item.title}\" renewed" else "\"${item.title}\" completed",
+                    message = UiText.of(
+                        if (outcome.renewed) R.string.msg_item_renewed else R.string.msg_item_completed,
+                        item.title
+                    ),
                     undoItem = outcome.previous,
                     historyId = outcome.historyId
                 )
@@ -197,7 +192,7 @@ class DashboardViewModel(
     fun delete(item: ExpiryItem) {
         viewModelScope.launch {
             actions.delete(item)
-            _events.emit(DashboardEvent("\"${item.title}\" deleted", undoItem = item))
+            _events.emit(DashboardEvent(UiText.of(R.string.msg_item_deleted, item.title), undoItem = item))
         }
     }
 

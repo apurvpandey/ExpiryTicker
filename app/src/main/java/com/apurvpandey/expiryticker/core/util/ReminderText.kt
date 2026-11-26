@@ -9,12 +9,4 @@ object ReminderText {
             .filter { it >= 0 }
             .distinct()
             .sortedDescending()
-
-    fun label(daysBefore: Int): String = when (daysBefore) {
-        0 -> "On the day"
-        1 -> "1 day before"
-        else -> "$daysBefore days before"
-    }
-
-    fun summary(item: ExpiryItem): String = allOffsets(item).joinToString(", ") { label(it) }
 }

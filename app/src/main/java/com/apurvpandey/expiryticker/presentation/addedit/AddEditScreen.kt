@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.addedit
 
+import com.apurvpandey.expiryticker.presentation.common.asString
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Phone
@@ -15,6 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import com.apurvpandey.expiryticker.presentation.common.label
+import com.apurvpandey.expiryticker.presentation.common.reminderChipLabel
+import com.apurvpandey.expiryticker.presentation.common.resources
 import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import android.Manifest
 import android.content.pm.PackageManager
@@ -94,14 +100,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val reminderOptions = listOf(
-    0 to "On date",
-    1 to "1 day",
-    3 to "3 days",
-    7 to "7 days",
-    14 to "14 days",
-    30 to "30 days"
-)
+private val reminderDayOptions = listOf(0, 1, 3, 7, 14, 30)
 
 @Composable
 fun AddEditRoute(
@@ -121,6 +120,7 @@ fun AddEditRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val resources = androidx.compose.ui.platform.LocalContext.current.resources
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -141,7 +141,7 @@ fun AddEditRoute(
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(it.resolve(resources))
             viewModel.clearError()
         }
     }
@@ -190,13 +190,13 @@ fun AddEditScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (uiState.isEditMode) "Edit reminder" else "Add reminder",
+                        text = if (uiState.isEditMode) stringResource(R.string.edit_reminder) else stringResource(R.string.add_reminder),
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -224,7 +224,7 @@ fun AddEditScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text(if (uiState.isEditMode) "Save changes" else "Save reminder")
+                            Text(if (uiState.isEditMode) stringResource(R.string.save_changes) else stringResource(R.string.save_reminder))
                         }
                     }
                 }
@@ -254,9 +254,9 @@ fun AddEditScreen(
             OutlinedTextField(
                 value = uiState.title,
                 onValueChange = onTitleChange,
-                label = { Text("Title *") },
+                label = { Text(stringResource(R.string.title)) },
                 isError = uiState.titleError != null,
-                supportingText = uiState.titleError?.let { { Text(it) } },
+                supportingText = uiState.titleError?.let { { Text(it.asString()) } },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
@@ -266,7 +266,7 @@ fun AddEditScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-            FormCard(title = "Category", isError = uiState.categoryError != null) {
+            FormCard(title = stringResource(R.string.category), isError = uiState.categoryError != null) {
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val gap = 8.dp
                     val tileWidth = (maxWidth - gap * 3) / 4
@@ -287,7 +287,7 @@ fun AddEditScreen(
                 }
                 uiState.categoryError?.let { error ->
                     Text(
-                        text = error,
+                        text = error.asString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -295,7 +295,7 @@ fun AddEditScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-            FormCard(title = "When") {
+            FormCard(title = stringResource(R.string.section_when)) {
                 // Due date: the whole field is tappable
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -304,30 +304,30 @@ fun AddEditScreen(
                         ) ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Due date *") },
+                        label = { Text(stringResource(R.string.due_date)) },
                         trailingIcon = {
                             Icon(Icons.Default.CalendarToday, contentDescription = null)
                         },
                         isError = uiState.dueDateError != null,
-                        supportingText = uiState.dueDateError?.let { { Text(it) } },
+                        supportingText = uiState.dueDateError?.let { { Text(it.asString()) } },
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .clickable(onClickLabel = "Pick due date") { showDatePicker = true }
+                            .clickable(onClickLabel = stringResource(R.string.pick_due_date)) { showDatePicker = true }
                     )
                 }
 
                 // Quick picks: most renewals are a round period from today.
                 val today = LocalDate.now()
                 val quickDates = listOf(
-                    "Today" to today,
-                    "+1 month" to today.plusMonths(1),
-                    "+3 months" to today.plusMonths(3),
-                    "+6 months" to today.plusMonths(6),
-                    "+1 year" to today.plusYears(1)
+                    stringResource(R.string.quick_today) to today,
+                    stringResource(R.string.quick_1_month) to today.plusMonths(1),
+                    stringResource(R.string.quick_3_months) to today.plusMonths(3),
+                    stringResource(R.string.quick_6_months) to today.plusMonths(6),
+                    stringResource(R.string.quick_1_year) to today.plusYears(1)
                 )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -344,37 +344,37 @@ fun AddEditScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
 
-                SectionLabel("Remind me")
+                SectionLabel(stringResource(R.string.remind_me))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    reminderOptions.forEach { (days, label) ->
+                    reminderDayOptions.forEach { days ->
                         FilterChip(
                             selected = uiState.reminderDaysBefore == days,
                             onClick = { onReminderChange(days) },
-                            label = { Text(label) }
+                            label = { Text(reminderChipLabel(resources(), days)) }
                         )
                     }
                 }
 
-                SectionLabel("Also remind me")
+                SectionLabel(stringResource(R.string.also_remind_me))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    reminderOptions
-                        .filter { (days, _) -> days != uiState.reminderDaysBefore }
-                        .forEach { (days, label) ->
+                    reminderDayOptions
+                        .filter { days -> days != uiState.reminderDaysBefore }
+                        .forEach { days ->
                             FilterChip(
                                 selected = days in uiState.extraReminders,
                                 onClick = { onExtraReminderToggle(days) },
-                                label = { Text(label) }
+                                label = { Text(reminderChipLabel(resources(), days)) }
                             )
                         }
                 }
 
-                SectionLabel("Repeats")
+                SectionLabel(stringResource(R.string.repeats))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
@@ -383,18 +383,18 @@ fun AddEditScreen(
                         FilterChip(
                             selected = uiState.recurrence == rec,
                             onClick = { onRecurrenceChange(rec) },
-                            label = { Text(rec.displayName) }
+                            label = { Text(rec.label()) }
                         )
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
-            FormCard(title = "Details (optional)") {
+            FormCard(title = stringResource(R.string.details_optional)) {
                 OutlinedTextField(
                     value = uiState.amountText,
                     onValueChange = onAmountChange,
-                    label = { Text("Expected renewal cost (${CurrencyFormatter.symbol()})") },
+                    label = { Text(stringResource(R.string.expected_cost_label, CurrencyFormatter.symbol())) },
                     placeholder = { Text("e.g. 5000") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Decimal,
@@ -402,7 +402,7 @@ fun AddEditScreen(
                     ),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     isError = uiState.amountError != null,
-                    supportingText = uiState.amountError?.let { { Text(it) } },
+                    supportingText = uiState.amountError?.let { { Text(it.asString()) } },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -410,13 +410,13 @@ fun AddEditScreen(
                 OutlinedTextField(
                     value = uiState.renewalUrl,
                     onValueChange = onRenewalUrlChange,
-                    label = { Text("Renewal website") },
-                    placeholder = { Text("e.g. insurer.com/renew") },
+                    label = { Text(stringResource(R.string.renewal_website)) },
+                    placeholder = { Text(stringResource(R.string.e_g_insurer_com_renew)) },
                     leadingIcon = { Icon(Icons.Outlined.Language, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     isError = uiState.renewalUrlError != null,
-                    supportingText = uiState.renewalUrlError?.let { { Text(it) } },
+                    supportingText = uiState.renewalUrlError?.let { { Text(it.asString()) } },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -424,12 +424,12 @@ fun AddEditScreen(
                 OutlinedTextField(
                     value = uiState.phone,
                     onValueChange = onPhoneChange,
-                    label = { Text("Provider phone") },
+                    label = { Text(stringResource(R.string.provider_phone)) },
                     leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     isError = uiState.phoneError != null,
-                    supportingText = uiState.phoneError?.let { { Text(it) } },
+                    supportingText = uiState.phoneError?.let { { Text(it.asString()) } },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -437,7 +437,7 @@ fun AddEditScreen(
                 OutlinedTextField(
                     value = uiState.notes,
                     onValueChange = onNotesChange,
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.notes)) },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -471,10 +471,10 @@ fun AddEditScreen(
                         onDueDateChange(date)
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -536,7 +536,7 @@ private fun CategoryTile(
     ) {
         CategoryIconBadge(category = category, size = 40.dp, iconSize = 20.dp)
         Text(
-            text = category.displayName,
+            text = category.label(),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             textAlign = TextAlign.Center,

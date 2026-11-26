@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -41,6 +43,7 @@ fun SummaryCard(
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
         label = "summary_count"
     )
+    val a11y = stringResource(R.string.summary_a11y, label, count)
     val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
     val content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
@@ -48,7 +51,7 @@ fun SummaryCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 12.dp)
-                .semantics(mergeDescendants = true) { contentDescription = "$label: $count" },
+                .semantics(mergeDescendants = true) { contentDescription = a11y },
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

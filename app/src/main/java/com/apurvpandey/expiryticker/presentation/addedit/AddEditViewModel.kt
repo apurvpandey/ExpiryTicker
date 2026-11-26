@@ -1,5 +1,7 @@
 package com.apurvpandey.expiryticker.presentation.addedit
 
+import com.apurvpandey.expiryticker.R
+import com.apurvpandey.expiryticker.presentation.common.UiText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -24,24 +26,24 @@ data class AddEditUiState(
     val isLoading: Boolean = false,
     val isEditMode: Boolean = false,
     val title: String = "",
-    val titleError: String? = null,
+    val titleError: UiText? = null,
     val selectedCategory: RenewalCategory? = null,
-    val categoryError: String? = null,
+    val categoryError: UiText? = null,
     val dueDate: LocalDate? = null,
-    val dueDateError: String? = null,
+    val dueDateError: UiText? = null,
     val reminderDaysBefore: Int = 7,
     val recurrence: RecurrenceType = RecurrenceType.NONE,
     val amountText: String = "",
-    val amountError: String? = null,
+    val amountError: UiText? = null,
     val notes: String = "",
     val renewalUrl: String = "",
-    val renewalUrlError: String? = null,
+    val renewalUrlError: UiText? = null,
     val phone: String = "",
-    val phoneError: String? = null,
+    val phoneError: UiText? = null,
     val extraReminders: Set<Int> = emptySet(),
     val isSaving: Boolean = false,
     val savedSuccessfully: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: UiText? = null
 )
 
 class AddEditViewModel(
@@ -182,7 +184,7 @@ class AddEditViewModel(
                 _uiState.update { it.copy(isSaving = false, savedSuccessfully = true) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isSaving = false, errorMessage = "Failed to save. Please try again.")
+                    it.copy(isSaving = false, errorMessage = UiText.of(R.string.err_save_failed))
                 }
             }
         }
@@ -196,30 +198,30 @@ class AddEditViewModel(
         val state = _uiState.value
         var valid = true
         if (state.title.isBlank()) {
-            _uiState.update { it.copy(titleError = "Title cannot be empty") }
+            _uiState.update { it.copy(titleError = UiText.of(R.string.err_title_empty)) }
             valid = false
         }
         if (state.selectedCategory == null) {
-            _uiState.update { it.copy(categoryError = "Please select a category") }
+            _uiState.update { it.copy(categoryError = UiText.of(R.string.err_pick_category)) }
             valid = false
         }
         if (state.dueDate == null) {
-            _uiState.update { it.copy(dueDateError = "Please select a due date") }
+            _uiState.update { it.copy(dueDateError = UiText.of(R.string.err_pick_due_date)) }
             valid = false
         }
         if (state.amountText.isNotBlank()) {
             val parsed = CurrencyFormatter.parseToPaise(state.amountText)
             if (parsed == null) {
-                _uiState.update { it.copy(amountError = "Enter a valid amount (e.g. 1500 or 1500.50)") }
+                _uiState.update { it.copy(amountError = UiText.of(R.string.err_amount_invalid)) }
                 valid = false
             }
         }
         if (!LinkUtils.isValidUrl(state.renewalUrl)) {
-            _uiState.update { it.copy(renewalUrlError = "Enter a web address like example.com") }
+            _uiState.update { it.copy(renewalUrlError = UiText.of(R.string.err_url_invalid)) }
             valid = false
         }
         if (!LinkUtils.isValidPhone(state.phone)) {
-            _uiState.update { it.copy(phoneError = "Enter a valid phone number") }
+            _uiState.update { it.copy(phoneError = UiText.of(R.string.err_phone_invalid)) }
             valid = false
         }
         return valid

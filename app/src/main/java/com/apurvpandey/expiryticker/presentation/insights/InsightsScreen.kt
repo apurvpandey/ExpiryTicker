@@ -1,5 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.insights
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.apurvpandey.expiryticker.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apurvpandey.expiryticker.AppContainer
 import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.core.util.Insights
+import com.apurvpandey.expiryticker.presentation.common.label
 import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import java.time.YearMonth
@@ -68,10 +72,10 @@ fun InsightsScreen(insights: Insights?, onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Insights") },
+                title = { Text(stringResource(R.string.insights)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -91,16 +95,15 @@ fun InsightsScreen(insights: Insights?, onNavigateBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    BigNumber("Yearly cost", insights.annualPaise, "if everything keeps renewing", Modifier.weight(1f))
-                    BigNumber("Paid, last 12 months", insights.paidLast12MonthsPaise, "from your history", Modifier.weight(1f))
+                    BigNumber(stringResource(R.string.yearly_cost), insights.annualPaise, stringResource(R.string.if_everything_keeps_renewing), Modifier.weight(1f))
+                    BigNumber(stringResource(R.string.paid_last_12_months), insights.paidLast12MonthsPaise, stringResource(R.string.from_your_history), Modifier.weight(1f))
                 }
                 if (insights.upcoming.any { it.paise > 0 }) UpcomingChart(insights)
                 if (insights.byCategory.isNotEmpty()) CategoryBreakdown(insights)
                 if (insights.priceRises.isNotEmpty()) PriceRises(insights)
                 if (insights.openItemsWithoutCost > 0) {
                     Text(
-                        "${insights.openItemsWithoutCost} open item(s) have no expected cost and are not counted. " +
-                            "Add a cost when editing them for a fuller picture.",
+                        pluralStringResource(R.plurals.insights_no_cost, insights.openItemsWithoutCost, insights.openItemsWithoutCost),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -119,10 +122,10 @@ private fun EmptyInsights(modifier: Modifier) {
     ) {
         Icon(Icons.Outlined.Insights, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
-        Text("Nothing to show yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.nothing_to_show_yet), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         Text(
-            "Add an expected cost to your items, or record what you paid when you renew, and your spending shows up here.",
+            stringResource(R.string.add_an_expected_cost_to_your),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -174,7 +177,7 @@ private fun UpcomingChart(insights: Insights) {
     val max = insights.upcoming.maxOf { it.paise }.coerceAtLeast(1L)
     val thisMonth = YearMonth.now()
     val total = insights.upcoming.sumOf { it.paise }
-    SectionCard("Next 12 months  ·  ${CurrencyFormatter.format(total)}") {
+    SectionCard(stringResource(R.string.next_12_months, CurrencyFormatter.format(total))) {
         Row(
             modifier = Modifier.fillMaxWidth().height(120.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -182,11 +185,16 @@ private fun UpcomingChart(insights: Insights) {
         ) {
             insights.upcoming.forEach { m ->
                 val fraction = m.paise.toFloat() / max
+                val monthA11y = stringResource(
+                    R.string.month_amount_a11y,
+                    m.month.month.getDisplayName(TextStyle.FULL, locale),
+                    CurrencyFormatter.format(m.paise)
+                )
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .semantics { contentDescription = "${m.month.month.getDisplayName(TextStyle.FULL, locale)}: ${CurrencyFormatter.format(m.paise)}" },
+                        .semantics { contentDescription = monthA11y },
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -212,8 +220,11 @@ private fun UpcomingChart(insights: Insights) {
         val busiest = insights.upcoming.maxByOrNull { it.paise }
         if (busiest != null && busiest.paise > 0) {
             Text(
-                "Busiest month: ${busiest.month.month.getDisplayName(TextStyle.FULL, locale)} " +
-                    "(${CurrencyFormatter.format(busiest.paise)})",
+                stringResource(
+                    R.string.busiest_month,
+                    busiest.month.month.getDisplayName(TextStyle.FULL, locale),
+                    CurrencyFormatter.format(busiest.paise)
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -224,13 +235,13 @@ private fun UpcomingChart(insights: Insights) {
 @Composable
 private fun CategoryBreakdown(insights: Insights) {
     val max = insights.byCategory.maxOf { it.annualPaise }.coerceAtLeast(1L)
-    SectionCard("By category, per year") {
+    SectionCard(stringResource(R.string.by_category_per_year)) {
         insights.byCategory.forEach { row ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CategoryIconBadge(category = row.category, size = 36.dp, iconSize = 18.dp)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(row.category.displayName, style = MaterialTheme.typography.bodyMedium)
+                        Text(row.category.label(), style = MaterialTheme.typography.bodyMedium)
                         Text(CurrencyFormatter.format(row.annualPaise), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     }
                     Box(
@@ -257,18 +268,18 @@ private fun CategoryBreakdown(insights: Insights) {
 @Composable
 private fun PriceRises(insights: Insights) {
     val color = ExpiryTheme.colors.overdue.accent
-    SectionCard("Price increases") {
+    SectionCard(stringResource(R.string.price_increases)) {
         insights.priceRises.forEach { rise ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(rise.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                     Text(
-                        "${CurrencyFormatter.format(rise.fromPaise)} → ${CurrencyFormatter.format(rise.toPaise)}",
+                        stringResource(R.string.price_from_to, CurrencyFormatter.format(rise.fromPaise), CurrencyFormatter.format(rise.toPaise)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Text("▲ +${rise.percent}%", color = color, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.price_rise, rise.percent), color = color, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
             }
         }
     }
