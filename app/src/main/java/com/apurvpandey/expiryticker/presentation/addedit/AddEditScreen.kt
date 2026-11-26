@@ -1,6 +1,8 @@
 package com.apurvpandey.expiryticker.presentation.addedit
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -152,6 +154,9 @@ fun AddEditRoute(
         onDueDateChange = viewModel::onDueDateChange,
         onReminderChange = viewModel::onReminderChange,
         onRecurrenceChange = viewModel::onRecurrenceChange,
+        onRenewalUrlChange = viewModel::onRenewalUrlChange,
+        onPhoneChange = viewModel::onPhoneChange,
+        onExtraReminderToggle = viewModel::onExtraReminderToggle,
         onAmountChange = viewModel::onAmountChange,
         onNotesChange = viewModel::onNotesChange,
         onSave = viewModel::save
@@ -169,6 +174,9 @@ fun AddEditScreen(
     onDueDateChange: (LocalDate) -> Unit,
     onReminderChange: (Int) -> Unit,
     onRecurrenceChange: (RecurrenceType) -> Unit,
+    onRenewalUrlChange: (String) -> Unit = {},
+    onPhoneChange: (String) -> Unit = {},
+    onExtraReminderToggle: (Int) -> Unit = {},
     onAmountChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
     onSave: () -> Unit
@@ -349,6 +357,22 @@ fun AddEditScreen(
                     }
                 }
 
+                SectionLabel("Also remind me")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    reminderOptions
+                        .filter { (days, _) -> days != uiState.reminderDaysBefore }
+                        .forEach { (days, label) ->
+                            FilterChip(
+                                selected = days in uiState.extraReminders,
+                                onClick = { onExtraReminderToggle(days) },
+                                label = { Text(label) }
+                            )
+                        }
+                }
+
                 SectionLabel("Repeats")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -378,6 +402,33 @@ fun AddEditScreen(
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     isError = uiState.amountError != null,
                     supportingText = uiState.amountError?.let { { Text(it) } },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = uiState.renewalUrl,
+                    onValueChange = onRenewalUrlChange,
+                    label = { Text("Renewal website") },
+                    placeholder = { Text("e.g. insurer.com/renew") },
+                    leadingIcon = { Icon(Icons.Outlined.Language, contentDescription = null) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                    isError = uiState.renewalUrlError != null,
+                    supportingText = uiState.renewalUrlError?.let { { Text(it) } },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = uiState.phone,
+                    onValueChange = onPhoneChange,
+                    label = { Text("Provider phone") },
+                    leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                    isError = uiState.phoneError != null,
+                    supportingText = uiState.phoneError?.let { { Text(it) } },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true

@@ -17,6 +17,12 @@ import com.apurvpandey.expiryticker.data.local.database.MIGRATION_1_2
 import com.apurvpandey.expiryticker.data.preferences.AppPreferencesDataStore
 import com.apurvpandey.expiryticker.data.repository.ExpiryItemRepositoryImpl
 import com.apurvpandey.expiryticker.domain.repository.ExpiryItemRepository
+import com.apurvpandey.expiryticker.data.files.AttachmentStore
+import com.apurvpandey.expiryticker.data.local.database.MIGRATION_2_3
+import com.apurvpandey.expiryticker.data.repository.AttachmentRepositoryImpl
+import com.apurvpandey.expiryticker.data.repository.RenewalHistoryRepositoryImpl
+import com.apurvpandey.expiryticker.domain.repository.AttachmentRepository
+import com.apurvpandey.expiryticker.domain.repository.RenewalHistoryRepository
 import com.apurvpandey.expiryticker.domain.usecase.ItemActions
 import com.apurvpandey.expiryticker.notification.ReminderScheduler
 
@@ -28,7 +34,7 @@ class AppContainer(context: Context) {
         ExpiryTickerDatabase::class.java,
         "expiry_ticker.db"
     )
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
 
     val expiryItemRepository: ExpiryItemRepository =
@@ -40,11 +46,32 @@ class AppContainer(context: Context) {
     val reminderScheduler: ReminderScheduler =
         ReminderScheduler(context.applicationContext)
 
-    val itemActions: ItemActions = ItemActions(expiryItemRepository, reminderScheduler)
+    val renewalHistoryRepository: RenewalHistoryRepository =
+        RenewalHistoryRepositoryImpl(database.renewalHistoryDao())
+
+    val attachmentRepository: AttachmentRepository =
+        AttachmentRepositoryImpl(database.attachmentDao())
+
+    val attachmentStore = AttachmentStore(context.applicationContext)
+
+    val itemActions: ItemActions =
+        ItemActions(expiryItemRepository, renewalHistoryRepository, reminderScheduler)
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
+        // Deleting an item leaves its history and files behind so that Undo can bring them back;
+        // by the next start the undo window is long gone, so tidy up what no item refers to.
+        appScope.launch {
+            runCatching {
+                database.renewalHistoryDao().deleteOrphans()
+                database.attachmentDao().deleteOrphans()
+                attachmentStore.purgeUnreferenced(
+                    database.attachmentDao().getAllFileNames().toSet()
+                )
+            }
+        }
+
         // Refresh the home-screen widget whenever the data changes (and once at start).
         appScope.launch {
             expiryItemRepository.observeAll().debounce(500).collect {

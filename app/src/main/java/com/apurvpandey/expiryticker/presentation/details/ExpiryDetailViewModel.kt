@@ -3,26 +3,34 @@ package com.apurvpandey.expiryticker.presentation.details
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
 import com.apurvpandey.expiryticker.core.util.ExpiryStatusCalculator
-import com.apurvpandey.expiryticker.core.util.RecurrenceCalculator
+import com.apurvpandey.expiryticker.data.files.AttachmentStore
+import com.apurvpandey.expiryticker.domain.model.Attachment
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
+import com.apurvpandey.expiryticker.domain.model.RenewalRecord
+import com.apurvpandey.expiryticker.domain.repository.AttachmentRepository
 import com.apurvpandey.expiryticker.domain.repository.ExpiryItemRepository
-import com.apurvpandey.expiryticker.notification.ReminderScheduler
+import com.apurvpandey.expiryticker.domain.repository.RenewalHistoryRepository
+import com.apurvpandey.expiryticker.domain.usecase.ItemActions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
 
 data class ExpiryDetailUiState(
     val isLoading: Boolean = true,
     val item: ExpiryItem? = null,
     val status: ExpiryStatus? = null,
+    val history: List<RenewalRecord> = emptyList(),
+    val attachments: List<Attachment> = emptyList(),
     val showDeleteDialog: Boolean = false,
+    val showRenewDialog: Boolean = false,
+    val renewAmountError: String? = null,
     val isDeleted: Boolean = false,
     val errorMessage: String? = null,
     val snackbarMessage: String? = null
@@ -31,7 +39,10 @@ data class ExpiryDetailUiState(
 class ExpiryDetailViewModel(
     private val itemId: Long,
     private val repository: ExpiryItemRepository,
-    private val reminderScheduler: ReminderScheduler
+    private val actions: ItemActions,
+    private val historyRepository: RenewalHistoryRepository,
+    private val attachmentRepository: AttachmentRepository,
+    private val store: AttachmentStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExpiryDetailUiState())
@@ -39,6 +50,16 @@ class ExpiryDetailViewModel(
 
     init {
         observeItem()
+        viewModelScope.launch {
+            historyRepository.observeForItem(itemId).collect { list ->
+                _uiState.update { it.copy(history = list) }
+            }
+        }
+        viewModelScope.launch {
+            attachmentRepository.observeForItem(itemId).collect { list ->
+                _uiState.update { it.copy(attachments = list) }
+            }
+        }
     }
 
     private fun observeItem() {
@@ -49,9 +70,7 @@ class ExpiryDetailViewModel(
                         it.copy(
                             isLoading = false,
                             item = item,
-                            status = ExpiryStatusCalculator.calculate(
-                                item.dueDate, item.isCompleted, LocalDate.now()
-                            )
+                            status = ExpiryStatusCalculator.calculate(item.dueDate, item.isCompleted, LocalDate.now())
                         )
                     }
                 } else if (!_uiState.value.isDeleted) {
@@ -63,42 +82,88 @@ class ExpiryDetailViewModel(
 
     fun showDeleteConfirmation() = _uiState.update { it.copy(showDeleteDialog = true) }
     fun dismissDeleteConfirmation() = _uiState.update { it.copy(showDeleteDialog = false) }
+    fun showRenewDialog() = _uiState.update { it.copy(showRenewDialog = true, renewAmountError = null) }
+    fun dismissRenewDialog() = _uiState.update { it.copy(showRenewDialog = false, renewAmountError = null) }
     fun clearSnackbarMessage() = _uiState.update { it.copy(snackbarMessage = null) }
+    fun showMessage(message: String) = _uiState.update { it.copy(snackbarMessage = message) }
 
     fun deleteItem() {
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
-            reminderScheduler.cancelReminder(item.id)
-            repository.delete(item)
+            actions.delete(item)
             _uiState.update { it.copy(showDeleteDialog = false, isDeleted = true) }
         }
     }
 
-    fun markRenewed() {
+    /** Completes or renews the item, recording what it cost; a blank [amountText] keeps the expected cost. */
+    fun confirmRenew(amountText: String) {
+        val item = _uiState.value.item ?: return
+        val amount = if (amountText.isBlank()) item.amountPaise else CurrencyFormatter.parseToPaise(amountText)
+        if (amountText.isNotBlank() && amount == null) {
+            _uiState.update { it.copy(renewAmountError = "Enter a valid amount") }
+            return
+        }
+        viewModelScope.launch {
+            val outcome = actions.markDone(item, amount)
+            _uiState.update {
+                it.copy(
+                    showRenewDialog = false,
+                    renewAmountError = null,
+                    snackbarMessage = if (outcome.renewed) "Marked as renewed" else "Marked as completed"
+                )
+            }
+        }
+    }
+
+    fun reopen() {
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
-            val now = Instant.now()
-            if (item.recurrence != RecurrenceType.NONE) {
-                val nextDueDate = RecurrenceCalculator.calculateNextDueDate(item.dueDate, item.recurrence)
-                val updated = item.copy(
-                    dueDate = nextDueDate,
-                    lastRenewedAt = now,
-                    updatedAt = now
+            actions.reopen(item)
+            _uiState.update { it.copy(snackbarMessage = "Moved back to your list") }
+        }
+    }
+
+    fun addAttachment(uri: android.net.Uri) {
+        viewModelScope.launch {
+            runCatching {
+                val stored = store.import(uri)
+                attachmentRepository.add(
+                    Attachment(
+                        itemId = itemId, displayName = stored.displayName, mimeType = stored.mimeType,
+                        fileName = stored.fileName, sizeBytes = stored.sizeBytes
+                    )
                 )
-                repository.update(updated)
-                reminderScheduler.cancelReminder(item.id)
-                reminderScheduler.scheduleReminder(updated)
-                _uiState.update { it.copy(snackbarMessage = "Marked as renewed") }
-            } else {
-                val completed = item.copy(
-                    isCompleted = true,
-                    lastRenewedAt = now,
-                    updatedAt = now
-                )
-                repository.update(completed)
-                reminderScheduler.cancelReminder(item.id)
-                _uiState.update { it.copy(snackbarMessage = "Marked as completed") }
+            }.onSuccess {
+                showMessage("File attached")
+            }.onFailure {
+                showMessage(it.message?.takeIf { m -> m.startsWith("File is larger") } ?: "Could not attach file")
             }
+        }
+    }
+
+    /** Registers a photo the camera wrote to [fileName]; deletes the empty file if capture was cancelled. */
+    fun onPhotoCaptured(fileName: String, success: Boolean) {
+        val file = store.file(fileName)
+        if (!success || !file.exists() || file.length() == 0L) {
+            file.delete()
+            return
+        }
+        viewModelScope.launch {
+            attachmentRepository.add(
+                Attachment(
+                    itemId = itemId, displayName = "Photo ${LocalDate.now()}", mimeType = "image/jpeg",
+                    fileName = fileName, sizeBytes = file.length()
+                )
+            )
+            showMessage("Photo attached")
+        }
+    }
+
+    fun removeAttachment(attachment: Attachment) {
+        viewModelScope.launch {
+            attachmentRepository.deleteById(attachment.id)
+            store.delete(attachment.fileName)
+            showMessage("Attachment removed")
         }
     }
 
@@ -106,11 +171,14 @@ class ExpiryDetailViewModel(
         fun factory(
             itemId: Long,
             repository: ExpiryItemRepository,
-            reminderScheduler: ReminderScheduler
+            actions: ItemActions,
+            historyRepository: RenewalHistoryRepository,
+            attachmentRepository: AttachmentRepository,
+            store: AttachmentStore
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                ExpiryDetailViewModel(itemId, repository, reminderScheduler) as T
+                ExpiryDetailViewModel(itemId, repository, actions, historyRepository, attachmentRepository, store) as T
         }
     }
 }

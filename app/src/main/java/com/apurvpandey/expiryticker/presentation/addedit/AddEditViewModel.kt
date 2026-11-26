@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.apurvpandey.expiryticker.core.util.CurrencyFormatter
+import com.apurvpandey.expiryticker.core.util.LinkUtils
 import com.apurvpandey.expiryticker.data.preferences.AppPreferencesDataStore
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
@@ -33,6 +34,11 @@ data class AddEditUiState(
     val amountText: String = "",
     val amountError: String? = null,
     val notes: String = "",
+    val renewalUrl: String = "",
+    val renewalUrlError: String? = null,
+    val phone: String = "",
+    val phoneError: String? = null,
+    val extraReminders: Set<Int> = emptySet(),
     val isSaving: Boolean = false,
     val savedSuccessfully: Boolean = false,
     val errorMessage: String? = null
@@ -77,8 +83,11 @@ class AddEditViewModel(
                         dueDate = item.dueDate,
                         reminderDaysBefore = item.reminderDaysBefore,
                         recurrence = item.recurrence,
-                        amountText = item.amountPaise?.let { p -> (p / 100.0).toString() } ?: "",
-                        notes = item.notes
+                        amountText = item.amountPaise?.let(CurrencyFormatter::toEditableText) ?: "",
+                        notes = item.notes,
+                        renewalUrl = item.renewalUrl,
+                        phone = item.phone,
+                        extraReminders = item.extraReminderDays.toSet()
                     )
                 }
             } else {
@@ -98,6 +107,13 @@ class AddEditViewModel(
 
     fun onReminderChange(days: Int) = _uiState.update { it.copy(reminderDaysBefore = days) }
 
+    fun onRenewalUrlChange(value: String) =
+        _uiState.update { it.copy(renewalUrl = value, renewalUrlError = null) }
+    fun onPhoneChange(value: String) =
+        _uiState.update { it.copy(phone = value, phoneError = null) }
+    fun onExtraReminderToggle(days: Int) = _uiState.update {
+        it.copy(extraReminders = if (days in it.extraReminders) it.extraReminders - days else it.extraReminders + days)
+    }
     fun onRecurrenceChange(value: RecurrenceType) = _uiState.update { it.copy(recurrence = value) }
 
     fun onAmountChange(raw: String) {
@@ -137,6 +153,9 @@ class AddEditViewModel(
                         recurrence = state.recurrence,
                         notes = state.notes.trim(),
                         amountPaise = amountPaise,
+                        renewalUrl = state.renewalUrl.trim(),
+                        phone = state.phone.trim(),
+                        extraReminderDays = extraDays(state),
                         updatedAt = now
                     )
                     repository.update(updated)
@@ -151,6 +170,9 @@ class AddEditViewModel(
                         recurrence = state.recurrence,
                         notes = state.notes.trim(),
                         amountPaise = amountPaise,
+                        renewalUrl = state.renewalUrl.trim(),
+                        phone = state.phone.trim(),
+                        extraReminderDays = extraDays(state),
                         createdAt = now,
                         updatedAt = now
                     )
@@ -165,6 +187,10 @@ class AddEditViewModel(
             }
         }
     }
+
+    /** Extra reminders exclude the main one, which is already stored separately. */
+    private fun extraDays(state: AddEditUiState): List<Int> =
+        (state.extraReminders - state.reminderDaysBefore).sortedDescending()
 
     private fun validate(): Boolean {
         val state = _uiState.value
@@ -187,6 +213,14 @@ class AddEditViewModel(
                 _uiState.update { it.copy(amountError = "Enter a valid amount (e.g. 1500 or 1500.50)") }
                 valid = false
             }
+        }
+        if (!LinkUtils.isValidUrl(state.renewalUrl)) {
+            _uiState.update { it.copy(renewalUrlError = "Enter a web address like example.com") }
+            valid = false
+        }
+        if (!LinkUtils.isValidPhone(state.phone)) {
+            _uiState.update { it.copy(phoneError = "Enter a valid phone number") }
+            valid = false
         }
         return valid
     }

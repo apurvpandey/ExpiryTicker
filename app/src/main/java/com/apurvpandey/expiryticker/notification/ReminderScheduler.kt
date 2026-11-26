@@ -6,6 +6,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.apurvpandey.expiryticker.core.util.ReminderCalculator
+import com.apurvpandey.expiryticker.core.util.ReminderText
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.notification.worker.ExpiryReminderWorker
 import java.time.LocalDate
@@ -26,17 +27,26 @@ class ReminderScheduler(private val context: Context) {
         if (item.isCompleted) return
         val today = LocalDate.now()
 
-        if (item.reminderDaysBefore > 0) {
-            val date = ReminderCalculator.reminderDate(item.dueDate, item.reminderDaysBefore)
+        // Every offset becomes one reminder at the chosen hour; 0 is the due day itself.
+        ReminderText.allOffsets(item).forEach { days ->
+            val date = ReminderCalculator.reminderDate(item.dueDate, days)
             val delay = ReminderCalculator.delayMillisUntil(date, reminderHour)
-            // A missed advance reminder still fires right away while the item is not overdue.
-            if (delay >= 0 || !item.dueDate.isBefore(today)) {
-                enqueue(item.id, KIND_ADVANCE, advanceName(item.id), delay.coerceAtLeast(0L))
+            when {
+                days == item.reminderDaysBefore && days > 0 ->
+                    // A missed main reminder still fires right away while the item is not overdue.
+                    if (delay >= 0 || !item.dueDate.isBefore(today)) {
+                        enqueue(item.id, KIND_ADVANCE, advanceName(item.id), delay.coerceAtLeast(0L))
+                    }
+                days == 0 -> if (delay >= 0) enqueue(item.id, KIND_DUE, dueName(item.id), delay)
+                // Extra reminders that are already in the past are simply skipped.
+                else -> if (delay >= 0) enqueue(item.id, KIND_ADVANCE, extraName(item.id, days), delay)
             }
         }
-
-        val dueDelay = ReminderCalculator.delayMillisUntil(item.dueDate, reminderHour)
-        if (dueDelay >= 0) enqueue(item.id, KIND_DUE, dueName(item.id), dueDelay)
+        // The due-day reminder is always there, whatever the offsets say.
+        if (0 !in ReminderText.allOffsets(item)) {
+            val dueDelay = ReminderCalculator.delayMillisUntil(item.dueDate, reminderHour)
+            if (dueDelay >= 0) enqueue(item.id, KIND_DUE, dueName(item.id), dueDelay)
+        }
     }
 
     /** One-off reminder tomorrow at the usual hour; does not change the due date. */
@@ -47,6 +57,7 @@ class ReminderScheduler(private val context: Context) {
 
     fun cancelReminder(itemId: Long) {
         val wm = WorkManager.getInstance(context)
+        wm.cancelAllWorkByTag(itemTag(itemId))
         wm.cancelUniqueWork(advanceName(itemId))
         wm.cancelUniqueWork(dueName(itemId))
         wm.cancelUniqueWork(snoozeName(itemId))
@@ -55,6 +66,7 @@ class ReminderScheduler(private val context: Context) {
     private fun enqueue(itemId: Long, kind: String, uniqueName: String, delayMs: Long) {
         val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
             .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
+            .addTag(itemTag(itemId))
             .setInputData(
                 workDataOf(
                     ExpiryReminderWorker.KEY_ITEM_ID to itemId,
@@ -75,5 +87,7 @@ class ReminderScheduler(private val context: Context) {
         fun advanceName(itemId: Long) = "expiry_reminder_$itemId"
         fun dueName(itemId: Long) = "expiry_due_$itemId"
         fun snoozeName(itemId: Long) = "expiry_snooze_$itemId"
+        fun extraName(itemId: Long, days: Int) = "expiry_extra_${itemId}_$days"
+        fun itemTag(itemId: Long) = "expiry_item_$itemId"
     }
 }

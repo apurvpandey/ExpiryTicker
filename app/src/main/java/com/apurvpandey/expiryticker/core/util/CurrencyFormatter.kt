@@ -27,6 +27,11 @@ object CurrencyFormatter {
         return (amount * 100).toLong()
     }
 
+    /** Plain editable text for an amount field: "1200" or "1200.50", no symbol or grouping. */
+    fun toEditableText(amountPaise: Long): String =
+        if (amountPaise % 100 == 0L) (amountPaise / 100).toString()
+        else "%d.%02d".format(amountPaise / 100, amountPaise % 100)
+
     fun formatFromPaise(amountPaise: Long?): String =
         if (amountPaise != null) format(amountPaise) else ""
 }

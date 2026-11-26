@@ -15,4 +15,10 @@ class CurrencyFormatterTest {
     @Test fun paiseAreKeptWhenPresent() {
         assertTrue(CurrencyFormatter.format(150050L).contains("1,500.50"))
     }
+
+    @Test fun editableTextHasNoSymbolOrDecimalNoise() {
+        assertTrue(CurrencyFormatter.toEditableText(120000L) == "1200")
+        assertTrue(CurrencyFormatter.toEditableText(150050L) == "1500.50")
+        assertTrue(CurrencyFormatter.toEditableText(105L) == "1.05")
+    }
 }

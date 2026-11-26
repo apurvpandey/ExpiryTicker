@@ -68,7 +68,7 @@ data class DashboardUiState(
 }
 
 /** One-off events shown as a snackbar with an optional undo. */
-data class DashboardEvent(val message: String, val undoItem: ExpiryItem?)
+data class DashboardEvent(val message: String, val undoItem: ExpiryItem?, val historyId: Long? = null)
 
 class DashboardViewModel(
     repository: ExpiryItemRepository,
@@ -187,7 +187,8 @@ class DashboardViewModel(
             _events.emit(
                 DashboardEvent(
                     message = if (outcome.renewed) "\"${item.title}\" renewed" else "\"${item.title}\" completed",
-                    undoItem = outcome.previous
+                    undoItem = outcome.previous,
+                    historyId = outcome.historyId
                 )
             )
         }
@@ -200,8 +201,8 @@ class DashboardViewModel(
         }
     }
 
-    fun undo(previous: ExpiryItem) {
-        viewModelScope.launch { actions.restore(previous) }
+    fun undo(previous: ExpiryItem, historyId: Long?) {
+        viewModelScope.launch { actions.restore(previous, historyId) }
     }
 
     companion object {

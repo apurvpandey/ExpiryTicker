@@ -10,4 +10,5 @@ interface ExpiryItemRepository {
     suspend fun update(item: ExpiryItem)
     suspend fun delete(item: ExpiryItem)
     suspend fun deleteById(id: Long)
+    suspend fun getAll(): List<ExpiryItem>
 }

@@ -25,5 +25,11 @@ data class ExpiryItemEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,                        // epoch millis
     @ColumnInfo(name = "last_renewed_at")
-    val lastRenewedAt: Long?                    // epoch millis; null if never renewed
+    val lastRenewedAt: Long?,                   // epoch millis; null if never renewed
+    @ColumnInfo(name = "renewal_url", defaultValue = "''")
+    val renewalUrl: String = "",
+    @ColumnInfo(name = "phone", defaultValue = "''")
+    val phone: String = "",
+    @ColumnInfo(name = "extra_reminders", defaultValue = "''")
+    val extraReminders: String = ""             // comma-separated days-before, e.g. "30,3"
 )

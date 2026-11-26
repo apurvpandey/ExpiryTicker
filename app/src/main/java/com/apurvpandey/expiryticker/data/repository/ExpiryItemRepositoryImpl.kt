@@ -26,6 +26,8 @@ class ExpiryItemRepositoryImpl(private val dao: ExpiryItemDao) : ExpiryItemRepos
     override suspend fun delete(item: ExpiryItem) = dao.delete(item.toEntity())
 
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
+
+    override suspend fun getAll(): List<ExpiryItem> = dao.getAll().map { it.toDomain() }
 }
 
 private fun ExpiryItemEntity.toDomain(): ExpiryItem = ExpiryItem(
@@ -40,7 +42,10 @@ private fun ExpiryItemEntity.toDomain(): ExpiryItem = ExpiryItem(
     isCompleted = isCompleted,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
-    lastRenewedAt = lastRenewedAt?.let { Instant.ofEpochMilli(it) }
+    lastRenewedAt = lastRenewedAt?.let { Instant.ofEpochMilli(it) },
+    renewalUrl = renewalUrl,
+    phone = phone,
+    extraReminderDays = extraReminders.split(',').mapNotNull { it.trim().toIntOrNull() }
 )
 
 private fun ExpiryItem.toEntity(): ExpiryItemEntity = ExpiryItemEntity(
@@ -55,5 +60,8 @@ private fun ExpiryItem.toEntity(): ExpiryItemEntity = ExpiryItemEntity(
     isCompleted = isCompleted,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
-    lastRenewedAt = lastRenewedAt?.toEpochMilli()
+    lastRenewedAt = lastRenewedAt?.toEpochMilli(),
+    renewalUrl = renewalUrl,
+    phone = phone,
+    extraReminders = extraReminderDays.joinToString(",")
 )

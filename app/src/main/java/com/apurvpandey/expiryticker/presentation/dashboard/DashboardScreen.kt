@@ -135,7 +135,7 @@ fun DashboardRoute(
                     duration = SnackbarDuration.Long
                 )
                 if (result == SnackbarResult.ActionPerformed) {
-                    event.undoItem?.let(viewModel::undo)
+                    event.undoItem?.let { viewModel.undo(it, event.historyId) }
                 }
             }
         }

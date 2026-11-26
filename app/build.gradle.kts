@@ -10,6 +10,11 @@ val localProps = Properties().also { props ->
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
 }
 
+ksp {
+    // Exported schemas let migrations be verified against every released version.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.apurvpandey.expiryticker"
     compileSdk {
