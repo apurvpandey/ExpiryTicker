@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ExpiryTicker</string>
+    <string name="widget_description">Your most urgent expiries and renewals at a glance.</string>
 </resources>

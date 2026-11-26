@@ -13,3 +13,11 @@ fun ExpiryStatus.countdown(): Countdown = when (this) {
     is ExpiryStatus.Active ->
         Countdown(daysRemaining.toString(), if (daysRemaining == 1) "day left" else "days left")
 }
+
+/** Compact one-line form for tight spaces such as the widget: "5d left", "Today", "9d overdue". */
+fun ExpiryStatus.shortLabel(): String = when (this) {
+    is ExpiryStatus.Completed -> "Done"
+    is ExpiryStatus.DueToday -> "Today"
+    is ExpiryStatus.Overdue -> "${daysOverdue}d overdue"
+    is ExpiryStatus.Active -> "${daysRemaining}d left"
+}

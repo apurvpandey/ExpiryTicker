@@ -43,13 +43,13 @@ object ExpiryTheme {
 /** Items due within this many days read as "soon" rather than "ok". */
 const val SOON_THRESHOLD_DAYS = 7
 
-@Composable
-fun ExpiryStatus.urgencyColors(): UrgencyColors {
-    val c = ExpiryTheme.colors
-    return when (this) {
-        is ExpiryStatus.Overdue -> c.overdue
-        is ExpiryStatus.DueToday -> c.today
-        is ExpiryStatus.Active -> if (daysRemaining <= SOON_THRESHOLD_DAYS) c.soon else c.ok
-        is ExpiryStatus.Completed -> c.done
-    }
+/** Picks the colour set for a status from [colors]; usable outside composition (widgets). */
+fun ExpiryStatus.urgency(colors: ExpiryColors): UrgencyColors = when (this) {
+    is ExpiryStatus.Overdue -> colors.overdue
+    is ExpiryStatus.DueToday -> colors.today
+    is ExpiryStatus.Active -> if (daysRemaining <= SOON_THRESHOLD_DAYS) colors.soon else colors.ok
+    is ExpiryStatus.Completed -> colors.done
 }
+
+@Composable
+fun ExpiryStatus.urgencyColors(): UrgencyColors = urgency(ExpiryTheme.colors)

@@ -27,15 +27,30 @@ object Routes {
     fun detail(id: Long) = "detail/$id"
 }
 
+/** An external request to open a screen (notification, widget). [nonce] makes repeats distinct. */
+data class LaunchRequest(val itemId: Long?, val openAdd: Boolean, val nonce: Long = System.nanoTime()) {
+    companion object {
+        fun from(intent: android.content.Intent?): LaunchRequest? {
+            intent ?: return null
+            val id = intent.getLongExtra(com.apurvpandey.expiryticker.MainActivity.EXTRA_ITEM_ID, -1L)
+                .takeIf { it > 0 }
+            val add = intent.getBooleanExtra(com.apurvpandey.expiryticker.MainActivity.EXTRA_OPEN_ADD, false)
+            return if (id != null || add) LaunchRequest(id, add) else null
+        }
+    }
+}
+
 @Composable
 fun ExpiryTickerApp(
     container: AppContainer,
-    initialItemId: Long? = null,
+    launchRequest: LaunchRequest? = null,
     navController: NavHostController = rememberNavController()
 ) {
-    LaunchedEffect(initialItemId) {
-        if (initialItemId != null) {
-            navController.navigate(Routes.detail(initialItemId))
+    LaunchedEffect(launchRequest) {
+        when {
+            launchRequest == null -> Unit
+            launchRequest.itemId != null -> navController.navigate(Routes.detail(launchRequest.itemId))
+            launchRequest.openAdd -> navController.navigate(Routes.ADD_EXPIRY)
         }
     }
 

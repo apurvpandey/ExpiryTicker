@@ -1,6 +1,10 @@
 package com.apurvpandey.expiryticker
 
+import android.content.Intent
 import android.os.Bundle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -8,10 +12,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.apurvpandey.expiryticker.presentation.navigation.ExpiryTickerApp
+import com.apurvpandey.expiryticker.presentation.navigation.LaunchRequest
 import com.apurvpandey.expiryticker.presentation.theme.AppTheme
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
 
@@ -25,7 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val container = (application as ExpiryTickerApplication).container
-        val initialItemId = intent?.getLongExtra(EXTRA_ITEM_ID, -1L)?.takeIf { it > 0 }
+        launchRequest = LaunchRequest.from(intent)
 
         setContent {
             // Hold the splash until the saved theme is known, so dark mode never flashes light.
@@ -52,13 +56,23 @@ class MainActivity : ComponentActivity() {
             ExpiryTickerTheme(appTheme = theme) {
                 ExpiryTickerApp(
                     container = container,
-                    initialItemId = initialItemId
+                    launchRequest = launchRequest
                 )
             }
         }
     }
 
+    // singleTop: a notification or widget tap while the app is open arrives here, not onCreate.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        launchRequest = LaunchRequest.from(intent)
+    }
+
+    private var launchRequest by mutableStateOf<LaunchRequest?>(null)
+
     companion object {
         const val EXTRA_ITEM_ID = "item_id"
+        const val EXTRA_OPEN_ADD = "open_add"
     }
 }
