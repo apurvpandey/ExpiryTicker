@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
@@ -68,15 +69,7 @@ private fun statusIcon(status: ExpiryStatus): ImageVector = when (status) {
 }
 
 @Composable
-fun statusColors(status: ExpiryStatus): Pair<Color, Color> = when (status) {
-    is ExpiryStatus.Overdue ->
-        MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-    is ExpiryStatus.DueToday ->
-        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-    is ExpiryStatus.Active -> if (status.daysRemaining <= 7)
-        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-    else
-        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-    is ExpiryStatus.Completed ->
-        MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+fun statusColors(status: ExpiryStatus): Pair<Color, Color> {
+    val u = status.urgencyColors()
+    return u.container to u.onContainer
 }

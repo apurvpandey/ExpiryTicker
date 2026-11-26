@@ -12,6 +12,8 @@ object CurrencyFormatter {
     fun format(amountPaise: Long): String {
         val formatter = NumberFormat.getCurrencyInstance(locale)
         formatter.currency = currency
+        // Whole rupees read cleaner without ".00"; keep paise when they matter.
+        if (amountPaise % 100 == 0L) formatter.maximumFractionDigits = 0
         return formatter.format(amountPaise / 100.0)
     }
 

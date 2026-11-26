@@ -101,7 +101,10 @@ import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RecurrenceType
 import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
+import com.apurvpandey.expiryticker.presentation.components.AllClearHero
+import com.apurvpandey.expiryticker.presentation.components.NextUpHero
 import com.apurvpandey.expiryticker.presentation.components.SummaryCard
+import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -277,6 +280,8 @@ fun DashboardScreen(
             ExtendedFloatingActionButton(
                 expanded = isFabExpanded,
                 onClick = onNavigateToAdd,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add item") },
                 text = { Text("Add item") }
             )
@@ -290,35 +295,47 @@ fun DashboardScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
+            if (!uiState.isLoading) {
+                item(key = "hero") {
+                    val next = uiState.nextUp
+                    if (next != null) {
+                        NextUpHero(
+                            item = next.item,
+                            status = next.status,
+                            onOpen = { onNavigateToDetail(next.item.id) },
+                            onMarkDone = { onMarkDone(next.item) },
+                            modifier = Modifier.animateItem()
+                        )
+                    } else if (uiState.totalActiveCount == 0 && uiState.sections.isNotEmpty()) {
+                        AllClearHero(modifier = Modifier.animateItem())
+                    }
+                }
+            }
+
+            if (!uiState.isLoading) item {
+                val c = ExpiryTheme.colors
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SummaryCard(
                         label = "Overdue",
                         count = uiState.overdueCount,
-                        icon = Icons.Outlined.Warning,
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        accent = c.overdue.accent,
                         onClick = { onFilterSelected(DashboardFilter.OVERDUE) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         label = "Next 7 days",
                         count = uiState.next7DaysCount,
-                        icon = Icons.Outlined.Schedule,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        accent = c.soon.accent,
                         onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         label = "Next 30 days",
                         count = uiState.next30DaysCount,
-                        icon = Icons.Outlined.CalendarMonth,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        accent = c.ok.accent,
                         onClick = { onFilterSelected(DashboardFilter.UPCOMING) },
                         modifier = Modifier.weight(1f)
                     )
@@ -336,7 +353,7 @@ fun DashboardScreen(
                 }
             }
 
-            item {
+            if (!uiState.isLoading) item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(DashboardFilter.entries) { filter ->
                         FilterChip(

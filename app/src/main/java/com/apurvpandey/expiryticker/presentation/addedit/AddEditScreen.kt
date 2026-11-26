@@ -1,5 +1,19 @@
 package com.apurvpandey.expiryticker.presentation.addedit
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import com.apurvpandey.expiryticker.presentation.components.CategoryIconBadge
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -226,9 +240,8 @@ fun AddEditScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // Title
             OutlinedTextField(
                 value = uiState.title,
                 onValueChange = onTitleChange,
@@ -237,139 +250,151 @@ fun AddEditScreen(
                 supportingText = uiState.titleError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                textStyle = MaterialTheme.typography.titleMedium,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
-            Spacer(Modifier.height(20.dp))
-            SectionLabel("Category", isError = uiState.categoryError != null)
-            Spacer(Modifier.height(8.dp))
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                RenewalCategory.entries.forEach { cat ->
-                    FilterChip(
-                        selected = uiState.selectedCategory == cat,
-                        onClick = { onCategoryChange(cat) },
-                        label = { Text(cat.displayName) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = cat.icon(),
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+            Spacer(Modifier.height(16.dp))
+            FormCard(title = "Category", isError = uiState.categoryError != null) {
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val gap = 8.dp
+                    val tileWidth = (maxWidth - gap * 3) / 4
+                    FlowRow(
+                        maxItemsInEachRow = 4,
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalArrangement = Arrangement.spacedBy(gap)
+                    ) {
+                        RenewalCategory.entries.forEach { cat ->
+                            CategoryTile(
+                                category = cat,
+                                selected = uiState.selectedCategory == cat,
+                                onClick = { onCategoryChange(cat) },
+                                modifier = Modifier.width(tileWidth)
                             )
                         }
+                    }
+                }
+                uiState.categoryError?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
-            uiState.categoryError?.let { error ->
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+
+            Spacer(Modifier.height(16.dp))
+            FormCard(title = "When") {
+                // Due date: the whole field is tappable
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.dueDate?.format(
+                            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                        ) ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Due date *") },
+                        trailingIcon = {
+                            Icon(Icons.Default.CalendarToday, contentDescription = null)
+                        },
+                        isError = uiState.dueDateError != null,
+                        supportingText = uiState.dueDateError?.let { { Text(it) } },
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable(onClickLabel = "Pick due date") { showDatePicker = true }
+                    )
+                }
+
+                // Quick picks: most renewals are a round period from today.
+                val today = LocalDate.now()
+                val quickDates = listOf(
+                    "Today" to today,
+                    "+1 month" to today.plusMonths(1),
+                    "+3 months" to today.plusMonths(3),
+                    "+6 months" to today.plusMonths(6),
+                    "+1 year" to today.plusYears(1)
                 )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    quickDates.forEach { (label, date) ->
+                        FilterChip(
+                            selected = uiState.dueDate == date,
+                            onClick = { onDueDateChange(date) },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+
+                SectionLabel("Remind me")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    reminderOptions.forEach { (days, label) ->
+                        FilterChip(
+                            selected = uiState.reminderDaysBefore == days,
+                            onClick = { onReminderChange(days) },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                SectionLabel("Repeats")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    RecurrenceType.entries.forEach { rec ->
+                        FilterChip(
+                            selected = uiState.recurrence == rec,
+                            onClick = { onRecurrenceChange(rec) },
+                            label = { Text(rec.displayName) }
+                        )
+                    }
+                }
             }
 
-            Spacer(Modifier.height(20.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(20.dp))
-
-            // Due date — entire field is tappable
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(16.dp))
+            FormCard(title = "Details (optional)") {
                 OutlinedTextField(
-                    value = uiState.dueDate?.format(
-                        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                    ) ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Due date *") },
-                    trailingIcon = {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null)
-                    },
-                    isError = uiState.dueDateError != null,
-                    supportingText = uiState.dueDateError?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
+                    value = uiState.amountText,
+                    onValueChange = onAmountChange,
+                    label = { Text("Expected renewal cost (₹)") },
+                    placeholder = { Text("e.g. 5000") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                    isError = uiState.amountError != null,
+                    supportingText = uiState.amountError?.let { { Text(it) } },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
-                Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
+                OutlinedTextField(
+                    value = uiState.notes,
+                    onValueChange = onNotesChange,
+                    label = { Text("Notes") },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp),
+                    maxLines = 4,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                )
             }
-
-            Spacer(Modifier.height(20.dp))
-            SectionLabel("Remind me")
-            Spacer(Modifier.height(8.dp))
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                reminderOptions.forEach { (days, label) ->
-                    FilterChip(
-                        selected = uiState.reminderDaysBefore == days,
-                        onClick = { onReminderChange(days) },
-                        label = { Text(label) }
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-            SectionLabel("Recurrence")
-            Spacer(Modifier.height(8.dp))
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                RecurrenceType.entries.forEach { rec ->
-                    FilterChip(
-                        selected = uiState.recurrence == rec,
-                        onClick = { onRecurrenceChange(rec) },
-                        label = { Text(rec.displayName) }
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(20.dp))
-
-            // Optional details
-            SectionLabel("Details (optional)")
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = uiState.amountText,
-                onValueChange = onAmountChange,
-                label = { Text("Expected renewal cost (₹)") },
-                placeholder = { Text("e.g. 5000") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                isError = uiState.amountError != null,
-                supportingText = uiState.amountError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = uiState.notes,
-                onValueChange = onNotesChange,
-                label = { Text("Notes") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                maxLines = 4,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-            )
 
             Spacer(Modifier.height(24.dp))
         }
@@ -402,6 +427,70 @@ fun AddEditScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+}
+
+@Composable
+private fun FormCard(
+    title: String,
+    isError: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = BorderStroke(
+            1.dp,
+            if (isError) MaterialTheme.colorScheme.error
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+        ),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            SectionLabel(title, isError)
+            content()
+        }
+    }
+}
+
+@Composable
+private fun CategoryTile(
+    category: RenewalCategory,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = MaterialTheme.shapes.medium
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                else Color.Transparent
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                shape = shape
+            )
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        CategoryIconBadge(category = category, size = 40.dp, iconSize = 20.dp)
+        Text(
+            text = category.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            minLines = 2
+        )
     }
 }
 

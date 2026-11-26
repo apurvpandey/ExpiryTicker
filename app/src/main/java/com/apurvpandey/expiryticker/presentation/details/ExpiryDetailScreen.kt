@@ -1,5 +1,23 @@
 package com.apurvpandey.expiryticker.presentation.details
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.sp
+import com.apurvpandey.expiryticker.presentation.components.countdown
+import com.apurvpandey.expiryticker.presentation.components.urgencyBrush
+import com.apurvpandey.expiryticker.presentation.theme.urgencyColors
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -215,121 +233,84 @@ private fun DetailContent(
     onDeleteClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val longDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Hero section
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                CategoryIconBadge(
-                    category = item.category,
-                    size = 52.dp,
-                    iconSize = 26.dp
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (status != null) {
-                        StatusChip(status = status)
-                    }
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = item.category.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+        DetailHero(item = item, status = status)
 
-        // Detail rows
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
+        InfoCard {
             DetailRow(
+                icon = Icons.Outlined.Event,
                 label = "Due date",
-                value = item.dueDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                value = item.dueDate.format(longDate)
             )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
             DetailRow(
+                icon = Icons.Outlined.NotificationsActive,
                 label = "Reminder",
-                value = if (item.reminderDaysBefore == 0) "On due date"
-                        else if (item.reminderDaysBefore == 1) "1 day before"
-                        else "${item.reminderDaysBefore} days before"
+                value = when (item.reminderDaysBefore) {
+                    0 -> "On due date"
+                    1 -> "1 day before"
+                    else -> "${item.reminderDaysBefore} days before"
+                }
             )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-            DetailRow(label = "Recurrence", value = item.recurrence.displayName)
+            DetailRow(
+                icon = Icons.Outlined.Repeat,
+                label = "Repeats",
+                value = item.recurrence.displayName
+            )
             if (item.amountPaise != null) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
                 DetailRow(
+                    icon = Icons.Outlined.Payments,
                     label = "Expected cost",
                     value = CurrencyFormatter.format(item.amountPaise)
                 )
             }
             item.lastRenewedAt?.let { instant ->
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
                 DetailRow(
+                    icon = Icons.Outlined.History,
                     label = "Last renewed",
-                    value = instant
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-                        .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                    value = instant.atZone(ZoneId.systemDefault()).toLocalDate().format(longDate)
                 )
             }
         }
 
         if (item.notes.isNotBlank()) {
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "Notes",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = item.notes,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            InfoCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "NOTES",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = item.notes,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-
         TextButton(
             onClick = onDeleteClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.textButtonColors(
                 contentColor = MaterialTheme.colorScheme.error
             )
         ) {
-            Icon(
-                Icons.Default.Delete,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
+            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.size(6.dp))
             Text("Delete item", style = MaterialTheme.typography.labelLarge)
         }
@@ -338,27 +319,93 @@ private fun DetailContent(
     }
 }
 
+/** Gradient header that follows the item's urgency and leads with the countdown. */
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailHero(item: ExpiryItem, status: ExpiryStatus?) {
+    val accent = status?.urgencyColors()?.accent ?: MaterialTheme.colorScheme.primary
+    val countdown = status?.countdown()
+    val headline = when (status) {
+        is ExpiryStatus.Overdue, is ExpiryStatus.Active -> "${countdown?.value} ${countdown?.caption}"
+        is ExpiryStatus.DueToday -> "Due today"
+        is ExpiryStatus.Completed -> "Completed"
+        null -> ""
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(urgencyBrush(accent))
+            .padding(horizontal = 20.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            CategoryIconBadge(category = item.category, size = 52.dp, iconSize = 26.dp)
+            Column {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = item.category.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+        if (headline.isNotEmpty()) {
+            Text(
+                text = headline,
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+        content = content
+    )
+}
+
+@Composable
+private fun DetailRow(icon: ImageVector, label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.45f)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(0.55f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 

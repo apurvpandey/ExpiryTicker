@@ -3,6 +3,7 @@ package com.apurvpandey.expiryticker.presentation.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
@@ -89,10 +90,14 @@ fun ExpiryTickerTheme(
         AppTheme.SYSTEM -> isSystemInDarkTheme()
     }
 
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
-        typography = AppTypography,
-        shapes = AppShapes,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalExpiryColors provides if (darkTheme) DarkExpiryColors else LightExpiryColors
+    ) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+            typography = AppTypography,
+            shapes = AppShapes,
+            content = content
+        )
+    }
 }
