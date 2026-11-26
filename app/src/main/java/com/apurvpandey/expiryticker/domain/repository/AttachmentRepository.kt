@@ -8,4 +8,7 @@ interface AttachmentRepository {
     suspend fun getById(id: Long): Attachment?
     suspend fun add(attachment: Attachment): Long
     suspend fun deleteById(id: Long)
+    suspend fun getAll(): List<Attachment>
+    suspend fun deleteAll()
+    suspend fun addAll(attachments: List<Attachment>)
 }

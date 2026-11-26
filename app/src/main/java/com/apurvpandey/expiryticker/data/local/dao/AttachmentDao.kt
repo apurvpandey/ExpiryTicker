@@ -14,6 +14,15 @@ interface AttachmentDao {
     @Query("SELECT * FROM attachments WHERE item_id = :itemId ORDER BY created_at ASC")
     fun observeForItem(itemId: Long): Flow<List<AttachmentEntity>>
 
+    @Query("SELECT * FROM attachments")
+    suspend fun getAll(): List<AttachmentEntity>
+
+    @Query("DELETE FROM attachments")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<AttachmentEntity>)
+
     @Query("SELECT * FROM attachments WHERE id = :id")
     suspend fun getById(id: Long): AttachmentEntity?
 

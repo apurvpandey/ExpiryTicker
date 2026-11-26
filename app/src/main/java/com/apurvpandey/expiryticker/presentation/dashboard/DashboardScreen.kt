@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DateRange
@@ -115,6 +116,7 @@ fun DashboardRoute(
     container: AppContainer,
     onNavigateToAdd: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
+    onNavigateToInsights: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val viewModel: DashboardViewModel = viewModel(
@@ -147,6 +149,7 @@ fun DashboardRoute(
         onNavigateToAdd = onNavigateToAdd,
         onNavigateToDetail = onNavigateToDetail,
         onNavigateToSettings = onNavigateToSettings,
+        onNavigateToInsights = onNavigateToInsights,
         onFilterSelected = viewModel::setFilter,
         onSortSelected = viewModel::setSort,
         onCategorySelected = viewModel::setCategory,
@@ -166,6 +169,7 @@ fun DashboardScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToInsights: () -> Unit = {},
     onFilterSelected: (DashboardFilter) -> Unit,
     onSortSelected: (DashboardSort) -> Unit = {},
     onCategorySelected: (RenewalCategory?) -> Unit = {},
@@ -238,6 +242,9 @@ fun DashboardScreen(
                                     )
                                 }
                             }
+                        }
+                        IconButton(onClick = onNavigateToInsights) {
+                            Icon(Icons.Outlined.BarChart, contentDescription = "Insights")
                         }
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")

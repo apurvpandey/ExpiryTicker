@@ -21,6 +21,10 @@ class RenewalHistoryRepositoryImpl(private val dao: RenewalHistoryDao) : Renewal
     override suspend fun add(record: RenewalRecord): Long = dao.insert(record.toEntity())
 
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
+
+    override suspend fun deleteAll() = dao.deleteAll()
+
+    override suspend fun addAll(records: List<RenewalRecord>) = dao.insertAll(records.map { it.toEntity() })
 }
 
 private fun RenewalRecordEntity.toDomain() = RenewalRecord(

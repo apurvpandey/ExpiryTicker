@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.apurvpandey.expiryticker.core.util.CsvExporter
+import com.apurvpandey.expiryticker.data.backup.BackupFormatException
+import com.apurvpandey.expiryticker.data.backup.BackupManager
 import com.apurvpandey.expiryticker.data.preferences.AppPreferencesDataStore
 import com.apurvpandey.expiryticker.domain.repository.ExpiryItemRepository
 import com.apurvpandey.expiryticker.presentation.theme.AppTheme
@@ -28,7 +30,8 @@ data class SettingsUiState(
 
 class SettingsViewModel(
     private val appPreferences: AppPreferencesDataStore,
-    private val repository: ExpiryItemRepository
+    private val repository: ExpiryItemRepository,
+    private val backupManager: BackupManager
 ) : ViewModel() {
 
     val uiState = combine(
@@ -77,14 +80,52 @@ class SettingsViewModel(
         }
     }
 
+    fun backupTo(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    val out = resolver.openOutputStream(uri) ?: error("Could not open file")
+                    backupManager.export(out)
+                }
+            }
+            _messages.emit(
+                result.fold(
+                    onSuccess = { "Backed up $it items" },
+                    onFailure = { "Backup failed" }
+                )
+            )
+        }
+    }
+
+    fun restoreFrom(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    val input = resolver.openInputStream(uri) ?: error("Could not open file")
+                    input.use { backupManager.restore(it) }
+                }
+            }
+            _messages.emit(
+                result.fold(
+                    onSuccess = {
+                        val skipped = if (it.skippedAttachments > 0) " (${it.skippedAttachments} attachments missing)" else ""
+                        "Restored ${it.items} items$skipped"
+                    },
+                    onFailure = { e -> if (e is BackupFormatException) e.message.orEmpty() else "Restore failed" }
+                )
+            )
+        }
+    }
+
     companion object {
         fun factory(
             appPreferences: AppPreferencesDataStore,
-            repository: ExpiryItemRepository
+            repository: ExpiryItemRepository,
+            backupManager: BackupManager
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                SettingsViewModel(appPreferences, repository) as T
+                SettingsViewModel(appPreferences, repository, backupManager) as T
         }
     }
 }

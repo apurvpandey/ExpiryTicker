@@ -18,6 +18,12 @@ interface ExpiryItemDao {
     @Query("SELECT * FROM expiry_items WHERE id = :id")
     fun observeById(id: Long): Flow<ExpiryItemEntity?>
 
+    @Query("DELETE FROM expiry_items")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<ExpiryItemEntity>)
+
     @Query("SELECT * FROM expiry_items")
     suspend fun getAll(): List<ExpiryItemEntity>
 

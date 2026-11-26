@@ -14,6 +14,7 @@ import com.apurvpandey.expiryticker.AppContainer
 import com.apurvpandey.expiryticker.presentation.addedit.AddEditRoute
 import com.apurvpandey.expiryticker.presentation.dashboard.DashboardRoute
 import com.apurvpandey.expiryticker.presentation.details.ExpiryDetailRoute
+import com.apurvpandey.expiryticker.presentation.insights.InsightsRoute
 import com.apurvpandey.expiryticker.presentation.settings.SettingsRoute
 
 object Routes {
@@ -22,6 +23,7 @@ object Routes {
     const val EDIT_EXPIRY = "edit_expiry/{id}"
     const val DETAIL = "detail/{id}"
     const val SETTINGS = "settings"
+    const val INSIGHTS = "insights"
 
     fun editExpiry(id: Long) = "edit_expiry/$id"
     fun detail(id: Long) = "detail/$id"
@@ -76,6 +78,7 @@ fun ExpiryTickerApp(
                 container = container,
                 onNavigateToAdd = { navController.navigate(Routes.ADD_EXPIRY) },
                 onNavigateToDetail = { id -> navController.navigate(Routes.detail(id)) },
+                onNavigateToInsights = { navController.navigate(Routes.INSIGHTS) },
                 onNavigateToSettings = { navController.navigate(Routes.SETTINGS) }
             )
         }
@@ -111,6 +114,10 @@ fun ExpiryTickerApp(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { itemId -> navController.navigate(Routes.editExpiry(itemId)) }
             )
+        }
+
+        composable(Routes.INSIGHTS) {
+            InsightsRoute(container = container, onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.SETTINGS) {

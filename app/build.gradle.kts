@@ -110,6 +110,8 @@ dependencies {
 
     // Unit tests
     testImplementation(libs.junit)
+    // The Android JSON classes are stubs in local unit tests; this is the real implementation.
+    testImplementation(libs.json.test)
 
     // Instrumented tests
     androidTestImplementation(libs.androidx.junit)

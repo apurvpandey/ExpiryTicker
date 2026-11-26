@@ -4,6 +4,8 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.SnackbarHost
@@ -82,7 +84,7 @@ fun SettingsRoute(
     onNavigateBack: () -> Unit
 ) {
     val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.factory(container.appPreferences, container.expiryItemRepository)
+        factory = SettingsViewModel.factory(container.appPreferences, container.expiryItemRepository, container.backupManager)
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -91,6 +93,14 @@ fun SettingsRoute(
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
     ) { uri -> uri?.let { viewModel.exportTo(context.contentResolver, it) } }
+
+    val backupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri -> uri?.let { viewModel.backupTo(context.contentResolver, it) } }
+    var pendingRestore by remember { mutableStateOf<android.net.Uri?>(null) }
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> pendingRestore = uri }
 
     LaunchedEffect(viewModel) {
         viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
@@ -104,6 +114,14 @@ fun SettingsRoute(
         onReminderHourChange = viewModel::setReminderHour,
         onSendTestNotification = { ExpiryNotificationManager.showTest(context) },
         onExport = { exportLauncher.launch("expiryticker-export.csv") },
+        onBackup = { backupLauncher.launch("expiryticker-backup-${java.time.LocalDate.now()}.zip") },
+        onRestore = { restoreLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) },
+        pendingRestore = pendingRestore,
+        onRestoreConfirmed = { uri ->
+            pendingRestore = null
+            viewModel.restoreFrom(context.contentResolver, uri)
+        },
+        onRestoreDismissed = { pendingRestore = null },
         onThemeChange = viewModel::setAppTheme
     )
 }
@@ -118,7 +136,12 @@ fun SettingsScreen(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onReminderHourChange: (Int) -> Unit = {},
     onSendTestNotification: () -> Unit = {},
-    onExport: () -> Unit = {}
+    onExport: () -> Unit = {},
+    onBackup: () -> Unit = {},
+    onRestore: () -> Unit = {},
+    pendingRestore: android.net.Uri? = null,
+    onRestoreConfirmed: (android.net.Uri) -> Unit = {},
+    onRestoreDismissed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -254,6 +277,22 @@ fun SettingsScreen(
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                     modifier = Modifier.clickable(onClick = onExport)
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ListItem(
+                    headlineContent = { Text("Back up everything") },
+                    supportingContent = { Text("Items, history and attachments in one file") },
+                    leadingContent = { Icon(Icons.Default.CloudUpload, contentDescription = null) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable(onClick = onBackup)
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ListItem(
+                    headlineContent = { Text("Restore from backup") },
+                    supportingContent = { Text("Replaces everything currently in the app") },
+                    leadingContent = { Icon(Icons.Default.Restore, contentDescription = null) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.clickable(onClick = onRestore)
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -275,6 +314,28 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    pendingRestore?.let { uri ->
+        AlertDialog(
+            onDismissRequest = onRestoreDismissed,
+            title = { Text("Replace everything?") },
+            text = {
+                Text(
+                    "Restoring deletes all current items, history and attachments and replaces them " +
+                        "with the contents of the backup. This cannot be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { onRestoreConfirmed(uri) },
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) { Text("Replace") }
+            },
+            dismissButton = { TextButton(onClick = onRestoreDismissed) { Text("Cancel") } }
+        )
     }
 
     if (showHourDialog) {

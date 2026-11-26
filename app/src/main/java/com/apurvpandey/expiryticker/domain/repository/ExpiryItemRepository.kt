@@ -11,4 +11,7 @@ interface ExpiryItemRepository {
     suspend fun delete(item: ExpiryItem)
     suspend fun deleteById(id: Long)
     suspend fun getAll(): List<ExpiryItem>
+    suspend fun deleteAll()
+    /** Inserts items keeping their ids (used by restore). */
+    suspend fun addAll(items: List<ExpiryItem>)
 }

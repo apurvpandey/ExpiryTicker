@@ -28,6 +28,10 @@ class ExpiryItemRepositoryImpl(private val dao: ExpiryItemDao) : ExpiryItemRepos
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
 
     override suspend fun getAll(): List<ExpiryItem> = dao.getAll().map { it.toDomain() }
+
+    override suspend fun deleteAll() = dao.deleteAll()
+
+    override suspend fun addAll(items: List<ExpiryItem>) = dao.insertAll(items.map { it.toEntity() })
 }
 
 private fun ExpiryItemEntity.toDomain(): ExpiryItem = ExpiryItem(

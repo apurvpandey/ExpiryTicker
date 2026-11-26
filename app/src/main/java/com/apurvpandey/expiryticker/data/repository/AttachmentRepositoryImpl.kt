@@ -17,6 +17,12 @@ class AttachmentRepositoryImpl(private val dao: AttachmentDao) : AttachmentRepos
     override suspend fun add(attachment: Attachment): Long = dao.insert(attachment.toEntity())
 
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
+
+    override suspend fun getAll(): List<Attachment> = dao.getAll().map { it.toDomain() }
+
+    override suspend fun deleteAll() = dao.deleteAll()
+
+    override suspend fun addAll(attachments: List<Attachment>) = dao.insertAll(attachments.map { it.toEntity() })
 }
 
 internal fun AttachmentEntity.toDomain() = Attachment(

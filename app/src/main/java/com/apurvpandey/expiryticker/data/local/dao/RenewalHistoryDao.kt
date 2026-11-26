@@ -20,6 +20,12 @@ interface RenewalHistoryDao {
     @Query("SELECT * FROM renewal_history")
     suspend fun getAll(): List<RenewalRecordEntity>
 
+    @Query("DELETE FROM renewal_history")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<RenewalRecordEntity>)
+
     @Query("DELETE FROM renewal_history WHERE id = :id")
     suspend fun deleteById(id: Long)
 

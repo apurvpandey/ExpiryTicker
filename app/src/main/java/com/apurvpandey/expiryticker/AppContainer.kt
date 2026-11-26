@@ -17,6 +17,7 @@ import com.apurvpandey.expiryticker.data.local.database.MIGRATION_1_2
 import com.apurvpandey.expiryticker.data.preferences.AppPreferencesDataStore
 import com.apurvpandey.expiryticker.data.repository.ExpiryItemRepositoryImpl
 import com.apurvpandey.expiryticker.domain.repository.ExpiryItemRepository
+import com.apurvpandey.expiryticker.data.backup.BackupManager
 import com.apurvpandey.expiryticker.data.files.AttachmentStore
 import com.apurvpandey.expiryticker.data.local.database.MIGRATION_2_3
 import com.apurvpandey.expiryticker.data.repository.AttachmentRepositoryImpl
@@ -53,6 +54,11 @@ class AppContainer(context: Context) {
         AttachmentRepositoryImpl(database.attachmentDao())
 
     val attachmentStore = AttachmentStore(context.applicationContext)
+
+    val backupManager = BackupManager(
+        context.applicationContext, database, expiryItemRepository, renewalHistoryRepository,
+        attachmentRepository, attachmentStore, reminderScheduler
+    )
 
     val itemActions: ItemActions =
         ItemActions(expiryItemRepository, renewalHistoryRepository, reminderScheduler)

@@ -9,4 +9,6 @@ interface RenewalHistoryRepository {
     suspend fun getAll(): List<RenewalRecord>
     suspend fun add(record: RenewalRecord): Long
     suspend fun deleteById(id: Long)
+    suspend fun deleteAll()
+    suspend fun addAll(records: List<RenewalRecord>)
 }
