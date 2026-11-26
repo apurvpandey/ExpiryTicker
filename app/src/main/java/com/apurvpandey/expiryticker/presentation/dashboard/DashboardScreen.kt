@@ -104,6 +104,8 @@ import com.apurvpandey.expiryticker.domain.model.RenewalCategory
 import com.apurvpandey.expiryticker.presentation.components.ExpiryItemCard
 import com.apurvpandey.expiryticker.presentation.components.AllClearHero
 import com.apurvpandey.expiryticker.presentation.components.NextUpHero
+import com.apurvpandey.expiryticker.presentation.components.NotificationsOffBanner
+import com.apurvpandey.expiryticker.presentation.components.rememberNotificationsEnabled
 import com.apurvpandey.expiryticker.presentation.components.SummaryCard
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTheme
 import com.apurvpandey.expiryticker.presentation.theme.ExpiryTickerTheme
@@ -186,6 +188,7 @@ fun DashboardScreen(
     val isFabExpanded by remember {
         derivedStateOf { !listState.isScrollInProgress && listState.firstVisibleItemIndex < 2 }
     }
+    val notificationsOn = rememberNotificationsEnabled()
     val searchFocus = remember { FocusRequester() }
     var sortMenuOpen by remember { mutableStateOf(false) }
 
@@ -302,6 +305,10 @@ fun DashboardScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            if (!uiState.isLoading && uiState.totalActiveCount > 0 && !notificationsOn) {
+                item(key = "notifications_off") { NotificationsOffBanner(Modifier.animateItem()) }
+            }
+
             if (!uiState.isLoading) {
                 item(key = "hero") {
                     val next = uiState.nextUp

@@ -37,7 +37,9 @@ data class LaunchRequest(val itemId: Long?, val openAdd: Boolean, val nonce: Lon
             val id = intent.getLongExtra(com.apurvpandey.expiryticker.MainActivity.EXTRA_ITEM_ID, -1L)
                 .takeIf { it > 0 }
             val add = intent.getBooleanExtra(com.apurvpandey.expiryticker.MainActivity.EXTRA_OPEN_ADD, false)
-            return if (id != null || add) LaunchRequest(id, add) else null
+            // The launcher shortcut arrives as a link rather than as extras.
+            val fromShortcut = intent.data?.let { it.scheme == "expiryticker" && it.lastPathSegment == "add" } == true
+            return if (id != null || add || fromShortcut) LaunchRequest(id, add || fromShortcut) else null
         }
     }
 }

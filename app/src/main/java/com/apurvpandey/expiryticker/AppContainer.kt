@@ -65,6 +65,13 @@ class AppContainer(context: Context) {
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    /** Plans every open item's reminders again from scratch. */
+    suspend fun rescheduleAllReminders() {
+        expiryItemRepository.getAll()
+            .filterNot { it.isCompleted }
+            .forEach(reminderScheduler::scheduleReminder)
+    }
+
     init {
         // Deleting an item leaves its history and files behind so that Undo can bring them back;
         // by the next start the undo window is long gone, so tidy up what no item refers to.
@@ -90,9 +97,7 @@ class AppContainer(context: Context) {
         appScope.launch {
             appPreferences.reminderHour.collectLatest { hour ->
                 reminderScheduler.reminderHour = hour
-                expiryItemRepository.observeAll().first()
-                    .filterNot { it.isCompleted }
-                    .forEach(reminderScheduler::scheduleReminder)
+                rescheduleAllReminders()
             }
         }
     }

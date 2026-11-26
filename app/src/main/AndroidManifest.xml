@@ -21,6 +21,9 @@
             android:launchMode="singleTop"
             android:theme="@style/Theme.ExpiryTicker.Starting"
             android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -46,6 +49,14 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/expiry_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".notification.TimeChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
         </receiver>
         <receiver
             android:name=".notification.NotificationActionReceiver"

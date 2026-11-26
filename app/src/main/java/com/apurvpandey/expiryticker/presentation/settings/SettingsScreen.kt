@@ -13,6 +13,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import com.apurvpandey.expiryticker.notification.ExpiryNotificationManager
+import com.apurvpandey.expiryticker.presentation.components.openNotificationSettings
 import com.apurvpandey.expiryticker.security.AppLock
 import android.os.Build
 import android.provider.Settings as SystemSettings
@@ -217,11 +218,7 @@ fun SettingsScreen(
                             Icon(Icons.Default.Notifications, contentDescription = null)
                         },
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                        modifier = Modifier.clickable {
-                            val intent = Intent(SystemSettings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                .putExtra(SystemSettings.EXTRA_APP_PACKAGE, context.packageName)
-                            context.startActivity(intent)
-                        }
+                        modifier = Modifier.clickable { openNotificationSettings(context) }
                     )
                 }
 

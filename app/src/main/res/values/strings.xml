@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">ExpiryTicker</string>
     <string name="widget_description">Your most urgent expiries and renewals at a glance.</string>
+    <string name="shortcut_add_short">Add item</string>
+    <string name="shortcut_add_long">Add a new reminder</string>
 </resources>
