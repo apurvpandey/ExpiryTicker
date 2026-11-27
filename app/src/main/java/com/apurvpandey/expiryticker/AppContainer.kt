@@ -82,6 +82,10 @@ class AppContainer(context: Context) {
                 attachmentStore.purgeUnreferenced(
                     database.attachmentDao().getAllFileNames().toSet()
                 )
+                // A cloud restore brings the database back without the attachment files.
+                database.attachmentDao().getAll()
+                    .filterNot { attachmentStore.file(it.fileName).exists() }
+                    .forEach { database.attachmentDao().deleteById(it.id) }
             }
         }
 

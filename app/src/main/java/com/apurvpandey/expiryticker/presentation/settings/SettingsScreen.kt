@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.FileDownload
@@ -354,6 +355,25 @@ fun SettingsScreen(
                     },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                 )
+                // Only shown once a policy address has been set in config.xml.
+                val policyUrl = stringResource(R.string.privacy_policy_url)
+                if (policyUrl.isNotBlank()) {
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.privacy_policy)) },
+                        supportingContent = { Text(stringResource(R.string.privacy_policy_summary)) },
+                        leadingContent = { Icon(Icons.Default.PrivacyTip, contentDescription = null) },
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        modifier = Modifier.clickable {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse(policyUrl))
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            }
+                        }
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))

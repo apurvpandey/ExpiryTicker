@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Address of the hosted privacy policy. Set this before release; while it is empty the
+         Settings row that opens it is hidden. -->
+    <string name="privacy_policy_url" translatable="false"></string>
+</resources>

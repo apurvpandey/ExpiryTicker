@@ -298,4 +298,6 @@
     <string name="empty_upcoming_body">No renewals or expiries in the near future.</string>
     <string name="empty_completed_title">No completed items</string>
     <string name="empty_completed_body">Items you mark as renewed or completed will appear here.</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="privacy_policy_summary">How ExpiryTicker handles your data</string>
 </resources>

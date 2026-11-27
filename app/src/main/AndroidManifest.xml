@@ -4,6 +4,12 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- WorkManager adds a foreground service and its permission, but this app only runs short
+         background jobs. Removing them keeps the app out of Play's foreground-service declarations. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+
     <application
         android:name=".ExpiryTickerApplication"
         android:allowBackup="true"
@@ -62,6 +68,10 @@
         <receiver
             android:name=".notification.NotificationActionReceiver"
             android:exported="false" />
+
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            tools:node="remove" />
     </application>
 
 </manifest>

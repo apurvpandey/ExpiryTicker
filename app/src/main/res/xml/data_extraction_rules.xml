@@ -1,19 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What Android may copy to the user's Google backup (Android 12+) or to a new device.
+  Attachments are left out of the cloud backup: they can be large and would eat the 25 MB
+  quota, which stops backups altogether when exceeded. The app's own "Back up everything"
+  export includes them, and a direct device-to-device transfer keeps them.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="file" path="attachments/" />
     </cloud-backup>
-    <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
-    -->
+    <device-transfer />
 </data-extraction-rules>
