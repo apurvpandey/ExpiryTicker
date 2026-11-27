@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.apurvpandey.expiryticker.core.util.DueBucket
 import com.apurvpandey.expiryticker.core.util.ExpiryStatusCalculator
 import com.apurvpandey.expiryticker.core.util.ItemGrouping
+import com.apurvpandey.expiryticker.core.util.ItemSearch
 import com.apurvpandey.expiryticker.domain.model.ExpiryItem
 import com.apurvpandey.expiryticker.domain.model.ExpiryStatus
 import com.apurvpandey.expiryticker.domain.model.RenewalCategory
@@ -72,6 +73,8 @@ class DashboardViewModel(
     private val _category = MutableStateFlow<RenewalCategory?>(null)
     private val _searchQuery = MutableStateFlow("")
     private val _isSearchActive = MutableStateFlow(false)
+    // Category names in the user's language, supplied by the screen (a ViewModel has no resources).
+    private val _categoryLabels = MutableStateFlow<Map<RenewalCategory, String>>(emptyMap())
     private val _events = MutableSharedFlow<DashboardEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<DashboardEvent> = _events.asSharedFlow()
 
@@ -87,7 +90,7 @@ class DashboardViewModel(
         _filter, _sort, _category, _searchQuery, _isSearchActive
     ) { f, s, c, q, a -> Controls(f, s, c, q, a) }
 
-    val uiState = combine(repository.observeAll(), controls) { items, ctl ->
+    val uiState = combine(repository.observeAll(), controls, _categoryLabels) { items, ctl, labels ->
         val today = LocalDate.now()
         val all = items.map { item ->
             ExpiryItemWithStatus(
@@ -114,10 +117,16 @@ class DashboardViewModel(
             }
             .filter { ctl.category == null || it.item.category == ctl.category }
             .filter { ws ->
-                ctl.query.isBlank() ||
-                    ws.item.title.contains(ctl.query, ignoreCase = true) ||
-                    ws.item.notes.contains(ctl.query, ignoreCase = true) ||
-                    ws.item.category.displayName.contains(ctl.query, ignoreCase = true)
+                ItemSearch.matches(
+                    ctl.query,
+                    listOfNotNull(
+                        ws.item.title,
+                        ws.item.notes,
+                        // Both the English name and the one the user sees, so either can be typed.
+                        ws.item.category.displayName,
+                        labels[ws.item.category]
+                    )
+                )
             }
 
         val sorted = when (ctl.sort) {
@@ -163,6 +172,7 @@ class DashboardViewModel(
     fun setSort(sort: DashboardSort) { _sort.value = sort }
     fun setCategory(category: RenewalCategory?) { _category.value = category }
     fun setSearchQuery(query: String) { _searchQuery.value = query }
+    fun setCategoryLabels(labels: Map<RenewalCategory, String>) { _categoryLabels.value = labels }
     fun clearRefinements() {
         _category.value = null
         _searchQuery.value = ""

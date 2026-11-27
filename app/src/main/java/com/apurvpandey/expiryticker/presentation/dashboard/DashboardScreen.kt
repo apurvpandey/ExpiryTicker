@@ -130,6 +130,9 @@ fun DashboardRoute(
         factory = DashboardViewModel.factory(container.expiryItemRepository, container.itemActions)
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Let search understand category names in whatever language the app is showing.
+    val categoryLabels = RenewalCategory.entries.associateWith { stringResource(it.labelRes()) }
+    LaunchedEffect(categoryLabels) { viewModel.setCategoryLabels(categoryLabels) }
     val snackbarHostState = remember { SnackbarHostState() }
     val undoLabel = stringResource(R.string.undo)
     val resources = LocalContext.current.resources
