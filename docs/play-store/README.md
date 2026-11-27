@@ -18,8 +18,8 @@ Everything needed for the first submission of version 1.1.0 (version code 2) is 
 ## Before you submit: things only you can do
 
 1. **Fill in the placeholders** in `docs/privacy-policy.md` and `docs/privacy-policy.html`:
-   `[YOUR NAME OR COMPANY]` and `[YOUR EMAIL ADDRESS]` (each appears more than once). Use an
-   address you read.
+   the developer name and contact email (already filled in; change them if you use a different
+   public contact).
 2. **Host the policy** at a public URL that stays up. The simplest route is GitHub Pages: in the
    repository settings choose "Deploy from a branch", branch `main`, folder `/docs`. The page then
    lives at `https://<your-user>.github.io/<repo>/privacy-policy.html` (a private repository needs

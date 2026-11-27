@@ -4,8 +4,8 @@
 
 ExpiryTicker ("the app") helps you keep track of things that expire or renew and reminds you before they are due. This policy explains what the app does with your information. In short: **the app keeps your data on your device, and the developer does not collect it.**
 
-**Developer:** [YOUR NAME OR COMPANY]
-**Contact:** [YOUR EMAIL ADDRESS]
+**Developer:** Apurv Pandey
+**Contact:** mailapurvpandey@gmail.com
 
 ## What the app stores
 
@@ -63,4 +63,4 @@ If the app's handling of data changes, this policy will be updated and the effec
 
 ## Contact
 
-Questions about this policy: [YOUR EMAIL ADDRESS]
+Questions about this policy: mailapurvpandey@gmail.com
