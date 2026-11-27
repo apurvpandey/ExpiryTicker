@@ -22,12 +22,23 @@ object ItemSearch {
             if (Character.getType(ch) == Character.NON_SPACING_MARK.toInt()) {
                 if (afterLatinLetter) continue
             } else {
-                afterLatinLetter = Character.UnicodeScript.of(ch.code) == Character.UnicodeScript.LATIN
+                afterLatinLetter = isLatin(ch)
             }
             out.append(ch)
         }
         return Normalizer.normalize(out, Normalizer.Form.NFC).lowercase()
     }
+
+    // UnicodeBlock exists on every Android version we support; UnicodeScript needs API 24.
+    private val latinBlocks = setOf(
+        Character.UnicodeBlock.BASIC_LATIN,
+        Character.UnicodeBlock.LATIN_1_SUPPLEMENT,
+        Character.UnicodeBlock.LATIN_EXTENDED_A,
+        Character.UnicodeBlock.LATIN_EXTENDED_B,
+        Character.UnicodeBlock.LATIN_EXTENDED_ADDITIONAL
+    )
+
+    private fun isLatin(ch: Char): Boolean = Character.UnicodeBlock.of(ch) in latinBlocks
 
     fun tokens(query: String): List<String> =
         normalize(query).split(Regex("\\s+")).filter { it.isNotEmpty() }
