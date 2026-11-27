@@ -2,5 +2,5 @@
 <resources>
     <!-- Address of the hosted privacy policy. Set this before release; while it is empty the
          Settings row that opens it is hidden. -->
-    <string name="privacy_policy_url" translatable="false"></string>
+    <string name="privacy_policy_url" translatable="false">https://apurvpandey.github.io/expiryticker-privacy/privacy-policy.html</string>
 </resources>

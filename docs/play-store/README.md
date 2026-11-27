@@ -20,12 +20,13 @@ Everything needed for the first submission of version 1.1.0 (version code 2) is 
 1. **Fill in the placeholders** in `docs/privacy-policy.md` and `docs/privacy-policy.html`:
    the developer name and contact email (already filled in; change them if you use a different
    public contact).
-2. **Host the policy** at a public URL that stays up. The simplest route is GitHub Pages: in the
-   repository settings choose "Deploy from a branch", branch `main`, folder `/docs`. The page then
-   lives at `https://<your-user>.github.io/<repo>/privacy-policy.html` (a private repository needs
-   a paid plan for Pages; any static host works).
-3. **Put that URL in the app:** set `privacy_policy_url` in `app/src/main/res/values/config.xml`,
-   then rebuild. The Settings > About > Privacy policy row stays hidden until it is set.
+2. **The policy is hosted** at https://apurvpandey.github.io/expiryticker-privacy/privacy-policy.html
+   (a small public repository that holds only the policy, `apurvpandey/expiryticker-privacy`; the app
+   source is not published). Keep that repository and its name: the Play listing links to this
+   address, and renaming or deleting the repository would break the link. To change the policy,
+   edit `docs/privacy-policy.html` here and copy it into that repository.
+3. **The URL is already set in the app** (`privacy_policy_url` in
+   `app/src/main/res/values/config.xml`), so Settings > About shows a Privacy policy row.
 4. **Have the Hindi text reviewed** by a native speaker (the app strings in
    `values-hi/strings.xml` and `listing-hi.md`). Drop the Hindi listing if you prefer not to
    publish it yet; the app still works in Hindi.
