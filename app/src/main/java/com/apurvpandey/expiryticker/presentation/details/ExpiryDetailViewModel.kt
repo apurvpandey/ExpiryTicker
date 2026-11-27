@@ -158,7 +158,7 @@ class ExpiryDetailViewModel(
         viewModelScope.launch {
             attachmentRepository.add(
                 Attachment(
-                    itemId = itemId, displayName = "Photo ${LocalDate.now()}", mimeType = "image/jpeg",
+                    itemId = itemId, displayName = "IMG_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")), mimeType = "image/jpeg",
                     fileName = fileName, sizeBytes = file.length()
                 )
             )

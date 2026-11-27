@@ -574,7 +574,7 @@ private fun HistoryCard(history: List<RenewalRecord>) {
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            record.dueAfter?.let { "Next due ${it.format(shortDate)}" } ?: stringResource(R.string.completed),
+                            record.dueAfter?.let { stringResource(R.string.history_next_due, it.format(shortDate)) } ?: stringResource(R.string.completed),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

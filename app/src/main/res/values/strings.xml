@@ -300,4 +300,5 @@
     <string name="empty_completed_body">Items you mark as renewed or completed will appear here.</string>
     <string name="privacy_policy">Privacy policy</string>
     <string name="privacy_policy_summary">How ExpiryTicker handles your data</string>
+    <string name="history_next_due">Next due %1$s</string>
 </resources>

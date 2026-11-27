@@ -301,4 +301,5 @@
     <string name="empty_completed_body">जिन आइटम को आप नवीनीकृत या पूर्ण चिह्नित करेंगे वे यहाँ दिखेंगे।</string>
     <string name="privacy_policy">गोपनीयता नीति</string>
     <string name="privacy_policy_summary">ExpiryTicker आपके डेटा को कैसे संभालता है</string>
+    <string name="history_next_due">अगली देय तिथि %1$s</string>
 </resources>
